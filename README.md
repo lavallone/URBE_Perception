@@ -2,91 +2,19 @@
 
 
 
-## Getting started
+## ABSTRACT
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+**Edge computing for Autonomous Driving: road signs detection and recognition in a light-weight model**
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/lavallone/visiope_project.git
-git branch -M main
-git push -uf origin main
-```
-
-## Integrate with your tools
-
-- [ ] [Set up project integrations](https://gitlab.com/lavallone/visiope_project/-/settings/integrations)
-
-## Collaborate with your team
-
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Automatically merge when pipeline succeeds](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing(SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!).  Thank you to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Edge computing, in particular Edge AI, is the deployment of AI applications on embedded devices. It's called "edge" because all the computations are done near the user at the edge of the network, close to where the data are located, rather than centrally in a cloud computing facility or data center. Due to the maturation of neural networks and to the advances reached in compute infrastructure, it's now possible to deploy AI applications "on the edge" to solve real-world problems, since AI algorithms are capable of understanding language, sights, faces, objects and other analog forms of unstructured information. 
+Organizations from every industry are looking nowadays to increase automation and intelligence in their systems to improve efficiency and safety. To help them, computer programs need to execute tasks repeatedly and in a secure manner. Such jobs would be impractical to deploy on the cloud computing due to issues related to latency, bandwidth and privacy. That's why today the interest in edge computing is rising more and over. For machines to replicate human intelligence, it's required a deep neural network to be trained. After training, the network becomes an “inference engine” that can answer real-world questions, and it's exactly the inference time (that is the time of the network to make a prediction) that can play a fundamental role in an AI application. So, in all those real-time applications where the inference time is crucial, making the computation on the edge is needed. An example can be find in the field of Autonomous Driving.
+As it can be imagined, the computational system behind a self-driving car is huge and extremely complex; it integrates many technologies, including sensing (lidars, cameras, radars), localization, decision making 
+and perception (objects recognition and tracking). This is very challenging, since the design goal of autonomous driving edge computing systems is to guarantee the safety of the vehicles themselves and they need to process an enormous amount of data in real time with extremely tight latency constraints. 
+For instance, if an autonomous vehicle travels at 50 km/h, and thus about 30 m of braking distance, this requires the autonomous driving system to predict potential dangers up to a few seconds before they occur.
+Imagine a situation in which the vehicle has few instants to recognize a STOP road sign; the right recognition could prevent the passengers from doing a car accident or not.
+Therefore, the faster the autonomous driving edge computing system performs these complex computations (inference time), the safer the autonomous vehicle is.
+This project will then focus on the perception capability of an autonomous car, in particular on an object detection and recognition submodule that can be found in a real "autonomous driving algorithms system".
+The objects that are going to be detected and classified are the traffic signs. As well as road signs recognition plays an important role as in the safety of each of our lives, it is in autonomous cars. 
+More over is a challenging real-world problem because they seems to be easily detectable (they follow standard shapes and colors etc.), but nevertheless, that are some factors as the fact that are placed in outside environments, with different weather conditions, illumination variations, perspectives, occlusions, that makes traffic sign recognition a complex task to solve.
+Fortunately in recent years, as it's known, we have seen the rapid development of deep learning technology, which achieves significant results in object detection and recognition. Especially thanks to convolutional neural networks. These networks can be huge in terms of learnt parameters, that can easily reach the millions of them. Both this aspect and the level of operations complexity involved in them, leads to a very high inference time, that is the most important aspect when dealing with object recognition in real-time (that is, while the car is driving autonomously). 
+So, the main two goals of this project will be to: first, reach a good performance on the detection and recognition task and second, decrease the inference time by manipulating and simplify somehow the  neural network under consideration. To do so we will have to find and/or create a dataset regarding the topic, then building our light-weight network (to have as few operations involved as possible, but keeping a reasoning accuracy on the dataset) and finally training it. After all, having the "best" model ready, it will be time to make some real experiments on different embedded devices in order to be able to measure its inference time and the Frame Per Seconds (FPS) that the model can compute. Only with these final measurements we'll be able to decree the quality of the model as a component of an autonomous driving subsystem.
