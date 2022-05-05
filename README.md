@@ -14,15 +14,9 @@ As it can be imagined, the computational system behind a self-driving car is hug
 and perception (objects recognition and tracking). This is very challenging, since the design goal of autonomous driving edge computing systems is to guarantee the safety of the vehicles themselves and they need to process an enormous amount of data in real time with extremely tight latency constraints. 
 
 For instance, if an autonomous vehicle travels at 50 km/h, and thus about 30 m of braking distance, this requires the autonomous driving system to predict potential dangers up to a few seconds before they occur.
-Imagine a situation in which the vehicle has few instants to recognize a STOP road sign; the right recognition could prevent the passengers from doing a car accident or not.
+Imagine a situation in which the vehicle has few instants to recognize a STOP road sign; the right recognition could prevent the passengers from doing a car accident or not. Therefore, the faster the autonomous driving edge computing system performs these complex computations (inference time), the safer the autonomous vehicle is.
 
-Therefore, the faster the autonomous driving edge computing system performs these complex computations (inference time), the safer the autonomous vehicle is.
-
-This project will then focus on the perception capability of an autonomous car, in particular on an object detection and recognition submodule that can be found in a real "autonomous driving algorithms system".
-
-The objects that are going to be detected and classified are the traffic signs. As well as road signs recognition plays an important role as in the safety of each of our lives, it is in autonomous cars. 
-
-More over is a challenging real-world problem because they seems to be easily detectable (they follow standard shapes and colors etc.), but nevertheless, that are some factors as the fact that are placed in outside environments, with different weather conditions, illumination variations, perspectives, occlusions, that makes traffic sign recognition a complex task to solve.
+This project will then focus on the perception capability of an autonomous car, in particular on an object detection and recognition submodule that can be found in a real "autonomous driving algorithms system". The objects that are going to be detected and classified are the traffic signs. As well as road signs recognition plays an important role as in the safety of each of our lives, it is in autonomous cars. More over is a challenging real-world problem because they seems to be easily detectable (they follow standard shapes and colors etc.), but nevertheless, that are some factors as the fact that are placed in outside environments, with different weather conditions, illumination variations, perspectives, occlusions, that makes traffic sign recognition a complex task to solve.
 
 Fortunately in recent years, as it's known, we have seen the rapid development of deep learning technology, which achieves significant results in object detection and recognition. Especially thanks to convolutional neural networks. These networks can be huge in terms of learnt parameters, that can easily reach the millions of them. Both this aspect and the level of operations complexity involved in them, leads to a very high inference time, that is the most important aspect when dealing with object recognition in real-time (that is, while the car is driving autonomously). 
 
