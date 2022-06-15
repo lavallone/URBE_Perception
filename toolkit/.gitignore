@@ -1,0 +1,7 @@
+/data/
+/venv/
+/wenv/
+/src/__pycache__/
+/src/linux-venv
+/.idea/
+*.vsdx
