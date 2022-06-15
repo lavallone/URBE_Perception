@@ -37,15 +37,15 @@ class ToolKit:
         if not os.path.exists(self.camera_labels_dir):
             os.makedirs(self.camera_labels_dir)
 
-        self.laser_dir = self.save_dir + "/laser"
-        self.laser_images_dir = self.laser_dir + "/images"
-        self.laser_labels_dir = self.laser_dir + "/labels"
-        if not os.path.exists(self.laser_dir):
-            os.makedirs(self.laser_dir)
-        if not os.path.exists(self.laser_images_dir):
-            os.makedirs(self.laser_images_dir)
-        if not os.path.exists(self.laser_labels_dir):
-            os.makedirs(self.laser_labels_dir)
+        # self.laser_dir = self.save_dir + "/laser"
+        # self.laser_images_dir = self.laser_dir + "/images"
+        # self.laser_labels_dir = self.laser_dir + "/labels"
+        # if not os.path.exists(self.laser_dir):
+        #     os.makedirs(self.laser_dir)
+        # if not os.path.exists(self.laser_images_dir):
+        #     os.makedirs(self.laser_images_dir)
+        # if not os.path.exists(self.laser_labels_dir):
+        #     os.makedirs(self.laser_labels_dir)
 
         self.camera_list = ["UNKNOWN", "FRONT", "FRONT_LEFT", "FRONT_RIGHT", "SIDE_LEFT", "SIDE_RIGHT"]
 
@@ -135,80 +135,81 @@ class ToolKit:
     #########################################################################
 
     # Extract LiDAR Image
-    def extract_laser(self, ndx, frame):
+    # def extract_laser(self, ndx, frame):
 
-        # Extract the range images, camera projects and top pose
-        range_images, camera_projections, range_image_top_pose = frame_utils.parse_range_image_and_camera_projection(frame)
-        frame.lasers.sort(key=lambda laser: laser.name)
-        # Using the function provided by Waymo OD to convert range image into to point clouds to visualize and save the data
-        points, cp_points = frame_utils.convert_range_image_to_point_cloud(frame, range_images, camera_projections, range_image_top_pose)
+    #     # Extract the range images, camera projects and top pose
+    #     range_images, camera_projections, range_image_top_pose = frame_utils.parse_range_image_and_camera_projection(frame)
+    #     frame.lasers.sort(key=lambda laser: laser.name)
+    #     # Using the function provided by Waymo OD to convert range image into to point clouds to visualize and save the data
+    #     points, cp_points = frame_utils.convert_range_image_to_point_cloud(frame, range_images, camera_projections, range_image_top_pose)
 
-        # Point cloud data
-        f_p = open("{}/{}_points.data".format(self.laser_images_dir, ndx), 'wb')
-        pickle.dump(points, f_p)
-        # Camera projects for each point cloud data
-        f_cp = open("{}/{}_cp_points.data".format(self.laser_images_dir, ndx), 'wb')
-        pickle.dump(cp_points, f_cp)
+    #     # Point cloud data
+    #     f_p = open("{}/{}_points.data".format(self.laser_images_dir, ndx), 'wb')
+    #     pickle.dump(points, f_p)
+    #     # Camera projects for each point cloud data
+    #     f_cp = open("{}/{}_cp_points.data".format(self.laser_images_dir, ndx), 'wb')
+    #     pickle.dump(cp_points, f_cp)
 
-    # Extract LiDAR Labels
-    def extract_laser_labels(self, ndx, frame):
-        f = open("{}/{}_labels.csv".format(self.laser_labels_dir, ndx), "w")
-        for laser_label in frame.laser_labels:
-            center_x = laser_label.box.center_x
-            center_y = laser_label.box.center_y
-            center_z = laser_label.box.center_z
-            width = laser_label.box.width
-            length = laser_label.box.length
-            heading = laser_label.box.heading
-            speed_x = laser_label.metadata.speed_x
-            speed_y = laser_label.metadata.speed_y
-            accel_x = laser_label.metadata.accel_x
-            accel_y = laser_label.metadata.accel_y
-            label_type = laser_label.type
-            obj_id = laser_label.id
-            num_points = laser_label.num_lidar_points_in_box
-            # does not consider the level of difficulty to track the object, no requirement right now. maybe in the future
-            f.write(
-                "{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(center_x, center_y, center_z, width, length, heading, speed_x,
-                                                                speed_y, accel_x, accel_y, label_type, obj_id, num_points))
-        f.close()        
+    # # Extract LiDAR Labels
+    # def extract_laser_labels(self, ndx, frame):
+    #     f = open("{}/{}_labels.csv".format(self.laser_labels_dir, ndx), "w")
+    #     for laser_label in frame.laser_labels:
+    #         center_x = laser_label.box.center_x
+    #         center_y = laser_label.box.center_y
+    #         center_z = laser_label.box.center_z
+    #         width = laser_label.box.width
+    #         length = laser_label.box.length
+    #         heading = laser_label.box.heading
+    #         speed_x = laser_label.metadata.speed_x
+    #         speed_y = laser_label.metadata.speed_y
+    #         accel_x = laser_label.metadata.accel_x
+    #         accel_y = laser_label.metadata.accel_y
+    #         label_type = laser_label.type
+    #         obj_id = laser_label.id
+    #         num_points = laser_label.num_lidar_points_in_box
+    #         # does not consider the level of difficulty to track the object, no requirement right now. maybe in the future
+    #         f.write(
+    #             "{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(center_x, center_y, center_z, width, length, heading, speed_x,
+    #                                                             speed_y, accel_x, accel_y, label_type, obj_id, num_points))
+    #     f.close()        
 
-    #  Implemented Extraction as Threads
-    def threaded_laser_image_extraction(self, datasetAsList, range_value):
+    # #  Implemented Extraction as Threads
+    # def threaded_laser_image_extraction(self, datasetAsList, range_value):
         
-        frame = open_dataset.Frame()
+    #     frame = open_dataset.Frame()
         
-        for frameIdx in range_value:
-            frame.ParseFromString(datasetAsList[frameIdx])
-            self.extract_laser(frameIdx, frame)
-            self.extract_laser_labels(frameIdx, frame)
+    #     for frameIdx in range_value:
+    #         frame.ParseFromString(datasetAsList[frameIdx])
+    #         self.extract_laser(frameIdx, frame)
+    #         self.extract_laser_labels(frameIdx, frame)
 
-    # Function call to extract LiDAR images
-    def extract_laser_images(self):
+    # # Function call to extract LiDAR images
+    # def extract_laser_images(self):
 
-        # clear images and labels from previous file
-        self.delete_files(glob.glob("{}/*.data".format(self.laser_images_dir), recursive=True))
-        self.delete_files(glob.glob("{}/*.txt".format(self.laser_labels_dir), recursive=True))
-        open("{}/laser/last_file.txt".format(self.save_dir), 'w').write(self.segment)
+    #     # clear images and labels from previous file
+    #     self.delete_files(glob.glob("{}/*.data".format(self.laser_images_dir), recursive=True))
+    #     self.delete_files(glob.glob("{}/*.txt".format(self.laser_labels_dir), recursive=True))
+    #     open("{}/laser/last_file.txt".format(self.save_dir), 'w').write(self.segment)
 
-        # Convert tfrecord to a list
-        datasetAsList = list(self.dataset.as_numpy_iterator())
-        totalFrames = len(datasetAsList)
+    #     # Convert tfrecord to a list
+    #     datasetAsList = list(self.dataset.as_numpy_iterator())
+    #     totalFrames = len(datasetAsList)
 
-        threads = []
+    #     threads = []
 
-        for i in self.batch(range(totalFrames), 30):
-            t = threading.Thread(target=self.threaded_laser_image_extraction, args=[datasetAsList, i])
-            t.start()
-            threads.append(t)
+    #     for i in self.batch(range(totalFrames), 30):
+    #         t = threading.Thread(target=self.threaded_laser_image_extraction, args=[datasetAsList, i])
+    #         t.start()
+    #         threads.append(t)
         
-        for thread in threads:
-            thread.join()
+    #     for thread in threads:
+    #         thread.join()
 
     #########################################################################
     # Save Video
     #########################################################################
 
+    # VEDO SUCCESSIVAMENTE COSA FA ESATTAMENTE
     def process_image(self, image, labels):
         color = (0, 255, 0)
         for label in labels:
