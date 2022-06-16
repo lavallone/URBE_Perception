@@ -87,7 +87,9 @@ class ToolKit:
                     obj_id = label["id"]
                     #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
                     d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
-                    json.dump(d, label_file)
+                    s = json.dump(d)
+                    print(s)
+                    label_file.write(s)
             except:
                 pass
             if index == 1:
