@@ -1,4 +1,5 @@
 import os
+from typing_extensions import dataclass_transform
 import cv2
 import glob
 import pickle
@@ -74,7 +75,9 @@ class ToolKit:
             #with open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w") as label_file:
             try:
                 labels = camera["labels"]
-                for label in labels:
+                d_list = []
+                dd = {}
+                for i, label in enumerate(labels): # iteriamo sulle labels di una singola immagine
                     x = label["box"]["centerX"]
                     y = label["box"]["centerY"]
                     width = label["box"]["width"]
@@ -85,8 +88,11 @@ class ToolKit:
                     obj_id = label["id"]
                     #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
                     d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
-                    json.dump(d, label_file)
-                    label_file.write()
+                    d_list.append(d)
+                    #json.dump(d, label_file)
+                    #label_file.write()
+                    dd[i] = d 
+                print(dd)
             except:
                  pass
             label_file.close()
