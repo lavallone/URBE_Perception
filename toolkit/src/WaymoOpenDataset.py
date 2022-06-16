@@ -94,6 +94,8 @@ class ToolKit:
                     json.dump(d, label_file)
             except:
                 pass
+            if index == 1:
+                break
             label_file.close()
     
     # Implemented Extraction as Threads
