@@ -13,17 +13,8 @@ if __name__=="__main__":
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         toolkit.assign_segment(segment)
         
-        # facciamo partire due thread (nel mio caso ne basta uno)
-        threads = []
         start = time.time()
-        t1 = threading.Thread(target=toolkit.extract_camera_images) # questo processo salva il dataset nel formato che desideriamo
-        #t2 = threading.Thread(target=toolkit.extract_laser_images)
-        t1.start()
-        #t2.start()
-        threads.append(t1)
-        #threads.append(t2)
-        for thread in threads:
-            thread.join()
+        toolkit.extract_camera_images
         end = time.time()
         elapsed = end - start
         

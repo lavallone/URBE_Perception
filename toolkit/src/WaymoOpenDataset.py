@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 import tensorflow.compat.v1 as tf
 tf.enable_eager_execution()
 
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToDict # utile per manipolare i proto buffers
 
 from waymo_open_dataset.utils import range_image_utils
 from waymo_open_dataset.utils import transform_utils
@@ -16,7 +16,6 @@ from waymo_open_dataset.utils import  frame_utils
 from waymo_open_dataset import dataset_pb2 as open_dataset
 
 class ToolKit:
-    
     def __init__(self, training_dir=None, testing_dir=None, validation_dir=None, save_dir=None):
 
         self.segment = None
@@ -36,16 +35,6 @@ class ToolKit:
             os.makedirs(self.camera_images_dir)
         if not os.path.exists(self.camera_labels_dir):
             os.makedirs(self.camera_labels_dir)
-
-        # self.laser_dir = self.save_dir + "/laser"
-        # self.laser_images_dir = self.laser_dir + "/images"
-        # self.laser_labels_dir = self.laser_dir + "/labels"
-        # if not os.path.exists(self.laser_dir):
-        #     os.makedirs(self.laser_dir)
-        # if not os.path.exists(self.laser_images_dir):
-        #     os.makedirs(self.laser_images_dir)
-        # if not os.path.exists(self.laser_labels_dir):
-        #     os.makedirs(self.laser_labels_dir)
 
         self.camera_list = ["UNKNOWN", "FRONT", "FRONT_LEFT", "FRONT_RIGHT", "SIDE_LEFT", "SIDE_RIGHT"]
 
@@ -129,94 +118,19 @@ class ToolKit:
         
         for thread in threads:
             thread.join()
-
-    #########################################################################
-    # Extract Laser Images and Labels
-    #########################################################################
-
-    # Extract LiDAR Image
-    # def extract_laser(self, ndx, frame):
-
-    #     # Extract the range images, camera projects and top pose
-    #     range_images, camera_projections, range_image_top_pose = frame_utils.parse_range_image_and_camera_projection(frame)
-    #     frame.lasers.sort(key=lambda laser: laser.name)
-    #     # Using the function provided by Waymo OD to convert range image into to point clouds to visualize and save the data
-    #     points, cp_points = frame_utils.convert_range_image_to_point_cloud(frame, range_images, camera_projections, range_image_top_pose)
-
-    #     # Point cloud data
-    #     f_p = open("{}/{}_points.data".format(self.laser_images_dir, ndx), 'wb')
-    #     pickle.dump(points, f_p)
-    #     # Camera projects for each point cloud data
-    #     f_cp = open("{}/{}_cp_points.data".format(self.laser_images_dir, ndx), 'wb')
-    #     pickle.dump(cp_points, f_cp)
-
-    # # Extract LiDAR Labels
-    # def extract_laser_labels(self, ndx, frame):
-    #     f = open("{}/{}_labels.csv".format(self.laser_labels_dir, ndx), "w")
-    #     for laser_label in frame.laser_labels:
-    #         center_x = laser_label.box.center_x
-    #         center_y = laser_label.box.center_y
-    #         center_z = laser_label.box.center_z
-    #         width = laser_label.box.width
-    #         length = laser_label.box.length
-    #         heading = laser_label.box.heading
-    #         speed_x = laser_label.metadata.speed_x
-    #         speed_y = laser_label.metadata.speed_y
-    #         accel_x = laser_label.metadata.accel_x
-    #         accel_y = laser_label.metadata.accel_y
-    #         label_type = laser_label.type
-    #         obj_id = laser_label.id
-    #         num_points = laser_label.num_lidar_points_in_box
-    #         # does not consider the level of difficulty to track the object, no requirement right now. maybe in the future
-    #         f.write(
-    #             "{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(center_x, center_y, center_z, width, length, heading, speed_x,
-    #                                                             speed_y, accel_x, accel_y, label_type, obj_id, num_points))
-    #     f.close()        
-
-    # #  Implemented Extraction as Threads
-    # def threaded_laser_image_extraction(self, datasetAsList, range_value):
-        
-    #     frame = open_dataset.Frame()
-        
-    #     for frameIdx in range_value:
-    #         frame.ParseFromString(datasetAsList[frameIdx])
-    #         self.extract_laser(frameIdx, frame)
-    #         self.extract_laser_labels(frameIdx, frame)
-
-    # # Function call to extract LiDAR images
-    # def extract_laser_images(self):
-
-    #     # clear images and labels from previous file
-    #     self.delete_files(glob.glob("{}/*.data".format(self.laser_images_dir), recursive=True))
-    #     self.delete_files(glob.glob("{}/*.txt".format(self.laser_labels_dir), recursive=True))
-    #     open("{}/laser/last_file.txt".format(self.save_dir), 'w').write(self.segment)
-
-    #     # Convert tfrecord to a list
-    #     datasetAsList = list(self.dataset.as_numpy_iterator())
-    #     totalFrames = len(datasetAsList)
-
-    #     threads = []
-
-    #     for i in self.batch(range(totalFrames), 30):
-    #         t = threading.Thread(target=self.threaded_laser_image_extraction, args=[datasetAsList, i])
-    #         t.start()
-    #         threads.append(t)
-        
-    #     for thread in threads:
-    #         thread.join()
-
+            
     #########################################################################
     # Save Video
     #########################################################################
 
-    # VEDO SUCCESSIVAMENTE COSA FA ESATTAMENTE
     def process_image(self, image, labels):
         color = (0, 255, 0)
         for label in labels:
             label_list = list(map(str, label.split(",")))
             startPoint = (int(float(label_list[1])), int(float(label_list[2])))
             sizePoint = (int(float(label_list[1]) + float(label_list[3])), int(float(label_list[2]) + float(label_list[4])))
-            image = cv2.rectangle(image, startPoint, sizePoint, color=(255, 0, 0), thickness=3)
+            image = cv2.rectangle(image, startPoint, sizePoint, color=(255, 0, 0), thickness=3) # disegniamo le boxes
+            # andiamo a contare per ogni frame quali oggetti ci sono --> aggiorniamo un counter globale!
             if label_list[0] == "TYPE_UNKNOWN":
                 self.frame_type_unknown += 1
             elif label_list[0] == "TYPE_VEHICLE":
@@ -239,22 +153,17 @@ class ToolKit:
         fontScale = 1
         color = (255, 255, 255)
         thickness = 2
-
-        image = cv2.putText(image, "Unknown: {}".format(self.frame_type_unknown), org1, font, fontScale, color, thickness,
-                            cv2.LINE_AA)
-        image = cv2.putText(image, "Vehicle: {}".format(self.frame_type_vehicle), org2, font, fontScale, color, thickness,
-                            cv2.LINE_AA)
-        image = cv2.putText(image, "Pedestrian: {}".format(self.frame_type_ped), org3, font, fontScale, color, thickness,
-                            cv2.LINE_AA)
+        image = cv2.putText(image, "Unknown: {}".format(self.frame_type_unknown), org1, font, fontScale, color, thickness, cv2.LINE_AA)
+        image = cv2.putText(image, "Vehicle: {}".format(self.frame_type_vehicle), org2, font, fontScale, color, thickness, cv2.LINE_AA)
+        image = cv2.putText(image, "Pedestrian: {}".format(self.frame_type_ped), org3, font, fontScale, color, thickness, cv2.LINE_AA)
         image = cv2.putText(image, "Sign: {}".format(self.frame_type_sign), org4, font, fontScale, color, thickness, cv2.LINE_AA)
-        image = cv2.putText(image, "Cyclist: {}".format(self.frame_type_cyclist), org5, font, fontScale, color, thickness,
-                            cv2.LINE_AA)
+        image = cv2.putText(image, "Cyclist: {}".format(self.frame_type_cyclist), org5, font, fontScale, color, thickness, cv2.LINE_AA)
 
         return image
     
     def save_video(self):
-
-        if not os.path.isdir("{}/videos".format(self.save_dir)):
+        
+        if not os.path.isdir("{}/videos".format(self.save_dir)): # creao la directory /videos
             os.makedirs("{}/videos".format(self.save_dir))
 
         cameraList = ['FRONT_LEFT', 'FRONT', 'FRONT_RIGHT', 'SIDE_LEFT', 'SIDE_RIGHT']
@@ -264,13 +173,13 @@ class ToolKit:
         self.frame_type_ped = None
         self.frame_type_sign = None
         self.frame_type_cyclist = None
-        # print("Found {} frames.".format(totalFrames))
+        print("Found {} frames.".format(totalFrames))
 
         stat_data_file = open("{}/videos/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
 
         img_array = []
 
-        for i in range(totalFrames):
+        for i in range(totalFrames): # per ogni frame
 
             self.frame_type_unknown = 0
             self.frame_type_vehicle = 0
@@ -282,7 +191,8 @@ class ToolKit:
             for camera in cameraList[:3]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
                 label = open("{}/{}_{}.txt".format(self.camera_labels_dir, i, camera), "r")
-                image = self.process_image(image, label)
+                
+                image = self.process_image(image, label) #!!!#
                 image = cv2.resize(image, (504, 336))
                 front_image_list.append(image)
             front_view = np.hstack((front_image_list[0], front_image_list[1], front_image_list[2]))
@@ -291,34 +201,36 @@ class ToolKit:
             for camera in cameraList[3:]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
                 label = open("{}/{}_{}.txt".format(self.camera_labels_dir, i, camera), "r")
-                image = self.process_image(image, label)
-                image = cv2.resize(image, (504, 231))
+                
+                image = self.process_image(image, label) #!!!#
+                image = cv2.resize(image, (504, 231)) # resize diverso
                 side_image_list.append(image)
+                
             data_image = np.zeros((231, 504, 3), np.uint8)
-            data_image = self.write_text(data_image)
+            data_image = self.write_text(data_image) #!!!#
             side_view = np.hstack((side_image_list[0], data_image, side_image_list[1]))
+            
             frame_view = np.vstack((front_view, side_view))
             height, width, layers = frame_view.shape
-            img_array.append(frame_view)
+            img_array.append(frame_view) # appendiamo questo frame a una lista
 
-            stat_data_file.write(
-                "{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign,
-                                            self.frame_type_cyclist))
+            stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
             size = (width, height)
-        out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10,
-                            size)
-        stat_data_file.close()
-
+        
+        stat_data_file.close()    
+        
+        # CREAZIONE DEL VIDEO VERO E PROPRIO
+        out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
         for i in range(len(img_array)):
             out.write(img_array[i])
         out.release()
 
     #########################################################################
-    # Consolidate Object Count per Camera and frontal_velocity, weather, time and location
+    # Consolidate Object Count per Camera and frontal_velocity, weather, time and location --> abbastanza inutile
     #########################################################################
     def consolidate(self):
 
-        if not os.path.isdir("{}/consolidation".format(self.save_dir)):
+        if not os.path.isdir("{}/consolidation".format(self.save_dir)): # crea questo folder
             os.makedirs("{}/consolidation".format(self.save_dir))
 
         # Convert tfrecord to a list
@@ -329,7 +241,7 @@ class ToolKit:
 
         stat_file = open("{}/consolidation/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
         
-        for frameIdx in range(totalFrames):
+        for frameIdx in range(totalFrames): # itero su tutti i frame
             
             frame.ParseFromString(datasetAsList[frameIdx])
 
@@ -386,7 +298,7 @@ class ToolKit:
                         side_right_list = [0, 0, 0, 0, 0]
             obj_list = front_list + front_left_list + front_right_list + side_left_list + side_right_list
             # determine the velocity
-            velocity = MessageToDict(frame.images[0])
+            velocity = MessageToDict(frame.images[0]) # possiamo accedere anche al valore della velocità!!! --> utile se vogliamo ampliare il progetto
             stat_file.write("{},{},{},{},{}\n".format(','.join([str(obj_count) for obj_count in obj_list]), ','.join([str(vel) for vel in velocity["velocity"].values()]), frame.context.stats.weather, frame.context.stats.time_of_day, frame.context.stats.location))
 
     #########################################################################
