@@ -73,27 +73,27 @@ class ToolKit:
             camera = MessageToDict(data) # è un qualcosa converte il .proto file
             camera_name = camera["name"]
             #label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
-            label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
-            try:
-                labels = camera["labels"]
-                for label in labels:
-                    x = label["box"]["centerX"]
-                    y = label["box"]["centerY"]
-                    width = label["box"]["width"]
-                    length = label["box"]["length"]
-                    x = x - 0.5 * length
-                    y = y - 0.5 * width
-                    obj_type = label["type"]
-                    obj_id = label["id"]
-                    #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
-                    d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
-                    s = json.dump(d)
-                    print(s)
-                    label_file.write(s)
-            except:
-                pass
-            if index == 1:
-                break
+            with open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w") as label_file:
+                try:
+                    labels = camera["labels"]
+                    for label in labels:
+                        x = label["box"]["centerX"]
+                        y = label["box"]["centerY"]
+                        width = label["box"]["width"]
+                        length = label["box"]["length"]
+                        x = x - 0.5 * length
+                        y = y - 0.5 * width
+                        obj_type = label["type"]
+                        obj_id = label["id"]
+                        #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
+                        d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
+                        s = json.dump(d)
+                        print(s)
+                        label_file.write(s)
+                except:
+                    pass
+                if index == 1:
+                    break
             label_file.close()
     
     # Implemented Extraction as Threads
