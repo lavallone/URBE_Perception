@@ -103,8 +103,8 @@ class ToolKit:
             frame.ParseFromString(datasetAsList[frameIdx])
             self.extract_image(frameIdx, frame)
             self.extract_labels(frameIdx, frame)
-            if frameIdx == 0:
-                break
+            #if frameIdx == 0:
+            #    break
 
     # Function to call to extract images
     def extract_camera_images(self):
