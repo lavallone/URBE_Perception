@@ -11,8 +11,6 @@ tf.enable_eager_execution()
 
 from google.protobuf.json_format import MessageToDict # utile per manipolare i proto buffers
 
-from waymo_open_dataset.utils import range_image_utils
-from waymo_open_dataset.utils import transform_utils
 from waymo_open_dataset.utils import  frame_utils
 from waymo_open_dataset import dataset_pb2 as open_dataset
 
@@ -95,16 +93,15 @@ class ToolKit:
             label_file.close()
     
     # Implemented Extraction as Threads
-    def threaded_camera_image_extraction(self, datasetAsList, range_value):
+    def camera_image_extraction_thread(self, datasetAsList, range_value):
         
         frame = open_dataset.Frame() #estraggo il Frame
         
         for frameIdx in range_value:
+            print("*************** processing frame {} ***************".format(frameIdx))
             frame.ParseFromString(datasetAsList[frameIdx])
             self.extract_image(frameIdx, frame)
             self.extract_labels(frameIdx, frame)
-            #if frameIdx == 0:
-            #    break
 
     # Function to call to extract images
     def extract_camera_images(self):
@@ -120,12 +117,14 @@ class ToolKit:
 
         threads = []
         for i in self.batch(range(totalFrames), 30):
-            t = threading.Thread(target=self.threaded_camera_image_extraction, args=[datasetAsList, i])
+            t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
             t.start()
             threads.append(t)
         
         for thread in threads:
             thread.join()
+        
+        print("*************** Finished ***************")
             
     #########################################################################
     # Save Video
