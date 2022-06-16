@@ -15,9 +15,9 @@ if __name__=="__main__":
         toolkit.assign_segment(segment)
         
         start = time.time()
-        print("ao")
-        toolkit.extract_camera_images
-        print("porco dio ")
+        t = threading.Thread(target=toolkit.extract_camera_images)
+        t.start()
+        t.join()
         end = time.time()
         elapsed = end - start
         
