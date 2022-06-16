@@ -108,21 +108,21 @@ class ToolKit:
         # clear images and labels from previous file
         self.delete_files(glob.glob("{}/*.png".format(self.camera_images_dir), recursive=True))
         self.delete_files(glob.glob("{}/*.txt".format(self.camera_labels_dir), recursive=True))
-        open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
+        # open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
 
-        # Convert tfrecord to a list
-        datasetAsList = list(self.dataset.as_numpy_iterator())
-        totalFrames = len(datasetAsList)
+        # # Convert tfrecord to a list
+        # datasetAsList = list(self.dataset.as_numpy_iterator())
+        # totalFrames = len(datasetAsList)
 
-        threads = []
-        for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
-            t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
-            t.start()
-            threads.append(t)
-            break
+        # threads = []
+        # for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
+        #     t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
+        #     t.start()
+        #     threads.append(t)
+        #     break
         
-        for thread in threads:
-            thread.join()
+        # for thread in threads:
+        #     thread.join()
         
         print("################# Finished #################")
             
