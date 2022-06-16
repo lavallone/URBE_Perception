@@ -71,8 +71,8 @@ class ToolKit:
         for index, data in enumerate(frame.camera_labels):
             camera = MessageToDict(data) # è un qualcosa converte il .proto file
             camera_name = camera["name"]
+            #label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
             label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
-            #with open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w") as label_file:
             try:
                 labels = camera["labels"]
                 d = {}
@@ -118,11 +118,10 @@ class ToolKit:
         totalFrames = len(datasetAsList)
 
         threads = []
-        for i in self.batch(range(totalFrames), 5): # ogni thread si occupa di 30 frame alla volta
+        for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
             t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
             t.start()
             threads.append(t)
-            break
         
         for thread in threads:
             thread.join()
