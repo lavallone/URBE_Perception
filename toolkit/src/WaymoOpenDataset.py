@@ -92,9 +92,6 @@ class ToolKit:
                         #label_file.write(s)
                 except:
                     pass
-            print("index is {}".format(index))
-            if index == 1:
-                break
             label_file.close()
     
     # Implemented Extraction as Threads
@@ -106,6 +103,8 @@ class ToolKit:
             frame.ParseFromString(datasetAsList[frameIdx])
             self.extract_image(frameIdx, frame)
             self.extract_labels(frameIdx, frame)
+            if frameIdx == 0:
+                break
 
     # Function to call to extract images
     def extract_camera_images(self):
