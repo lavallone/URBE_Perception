@@ -92,8 +92,9 @@ class ToolKit:
                         label_file.write(s)
                 except:
                     pass
-                if index == 1:
-                    break
+            print("index is {}".format(index))
+            if index == 1:
+                break
             label_file.close()
     
     # Implemented Extraction as Threads
