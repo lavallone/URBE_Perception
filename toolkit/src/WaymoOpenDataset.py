@@ -108,6 +108,7 @@ class ToolKit:
         # clear images and labels from previous file
         self.delete_files(glob.glob("{}/*.png".format(self.camera_images_dir), recursive=True))
         self.delete_files(glob.glob("{}/*.txt".format(self.camera_labels_dir), recursive=True))
+        self.delete_files(glob.glob("{}/*.json".format(self.camera_labels_dir), recursive=True))
         # open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
 
         # # Convert tfrecord to a list
@@ -122,7 +123,7 @@ class ToolKit:
         #     break
         
         # for thread in threads:
-        #     thread.join()
+        #     thread.join()s
         
         print("################# Finished #################")
             
