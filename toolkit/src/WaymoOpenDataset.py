@@ -102,8 +102,6 @@ class ToolKit:
             frame.ParseFromString(datasetAsList[frameIdx])
             self.extract_image(frameIdx, frame)
             self.extract_labels(frameIdx, frame)
-            if frameIdx == 5:
-                break
 
     # Function to call to extract images
     def extract_camera_images(self):
@@ -122,6 +120,8 @@ class ToolKit:
             t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
             t.start()
             threads.append(t)
+            if i==5:
+                break
         
         for thread in threads:
             thread.join()
