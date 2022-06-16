@@ -105,7 +105,7 @@ class ToolKit:
 
     # Function to call to extract images
     def extract_camera_images(self):
-
+        print("e la madonna")
         # clear images and labels from previous file
         self.delete_files(glob.glob("{}/*.png".format(self.camera_images_dir), recursive=True))
         self.delete_files(glob.glob("{}/*.txt".format(self.camera_labels_dir), recursive=True))

@@ -15,7 +15,9 @@ if __name__=="__main__":
         toolkit.assign_segment(segment)
         
         start = time.time()
+        print("ao")
         toolkit.extract_camera_images
+        print("porco dio ")
         end = time.time()
         elapsed = end - start
         
