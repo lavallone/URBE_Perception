@@ -72,13 +72,13 @@ class ToolKit:
         for index, data in enumerate(frame.camera_labels):
             camera = MessageToDict(data) # è un qualcosa converte il .proto file
             camera_name = camera["name"]
-            label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
-            # label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
-            # d = {
-            #     "id" : obj_id,
-            #     "type" : obj_type,
-            #     "bbox" : [x, y, length, width]
-            #     }
+            #label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
+            label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
+            d = {
+                "id" : obj_id,
+                "type" : obj_type,
+                "bbox" : [x, y, length, width]
+                }
             try:
                 labels = camera["labels"]
                 for label in labels:
@@ -90,8 +90,8 @@ class ToolKit:
                     y = y - 0.5 * width
                     obj_type = label["type"]
                     obj_id = label["id"]
-                    label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
-                    #json.dump(d, label_file)
+                    #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
+                    json.dump(d, label_file)
             except:
                 pass
             label_file.close()
