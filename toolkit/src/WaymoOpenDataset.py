@@ -88,7 +88,7 @@ class ToolKit:
                     #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
                     d_label = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
                     d[i] = d_label 
-                json.dump(d, label_file)
+                json.dump(d, label_file, indent=4)
             except:
                  pass
             label_file.close()
