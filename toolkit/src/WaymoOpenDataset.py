@@ -122,7 +122,7 @@ class ToolKit:
             break
         
         for thread in threads:
-            thread.join()s
+            thread.join()
         
         print("################# Finished #################")
             
