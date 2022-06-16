@@ -70,7 +70,7 @@ class ToolKit:
         for index, data in enumerate(frame.camera_labels):
             camera = MessageToDict(data) # è un qualcosa converte il .proto file
             camera_name = camera["name"]
-            label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
+            label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
             #with open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w") as label_file:
             try:
                 labels = camera["labels"]
@@ -83,10 +83,10 @@ class ToolKit:
                     y = y - 0.5 * width
                     obj_type = label["type"]
                     obj_id = label["id"]
-                    #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
+                    label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
                     d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
                     s = json.dump(d)
-                    label_file.write(s)
+                    #label_file.write(s)
             except:
                  pass
             label_file.close()
@@ -116,11 +116,10 @@ class ToolKit:
 
         threads = []
         for i in self.batch(range(totalFrames), 30):
+            print("AHAHAHAHHAHA    {}".format(i))
             t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
             t.start()
             threads.append(t)
-            if i==5:
-                break
         
         for thread in threads:
             thread.join()
