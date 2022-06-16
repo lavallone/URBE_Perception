@@ -5,6 +5,7 @@ import WaymoOpenDataset
 
 if __name__=="__main__":
 
+    #### COLAB ####
     training_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/tfrecord" # provide directory where .tfrecords are stored
     save_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/processed" # provide a directory where data should be extracted
 
@@ -19,6 +20,6 @@ if __name__=="__main__":
         elapsed = end - start
         
         toolkit.save_video()
-        toolkit.consolidate()
+        #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
         break # in questo modo processo un solo segmento

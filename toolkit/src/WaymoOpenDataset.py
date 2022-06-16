@@ -4,6 +4,7 @@ import glob
 import pickle
 import threading
 import numpy as np
+import json
 from urllib.parse import urlparse
 import tensorflow.compat.v1 as tf
 tf.enable_eager_execution()
@@ -72,6 +73,12 @@ class ToolKit:
             camera = MessageToDict(data) # è un qualcosa converte il .proto file
             camera_name = camera["name"]
             label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
+            # label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
+            # d = {
+            #     "id" : obj_id,
+            #     "type" : obj_type,
+            #     "bbox" : [x, y, length, width]
+            #     }
             try:
                 labels = camera["labels"]
                 for label in labels:
@@ -84,6 +91,7 @@ class ToolKit:
                     obj_type = label["type"]
                     obj_id = label["id"]
                     label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
+                    #json.dump(d, label_file)
             except:
                 pass
             label_file.close()
@@ -175,7 +183,7 @@ class ToolKit:
         self.frame_type_cyclist = None
         print("Found {} frames.".format(totalFrames))
 
-        stat_data_file = open("{}/videos/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
+        #stat_data_file = open("{}/videos/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
 
         img_array = []
 
@@ -214,10 +222,10 @@ class ToolKit:
             height, width, layers = frame_view.shape
             img_array.append(frame_view) # appendiamo questo frame a una lista
 
-            stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
+            #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
             size = (width, height)
         
-        stat_data_file.close()    
+        #stat_data_file.close()    
         
         # CREAZIONE DEL VIDEO VERO E PROPRIO
         out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
