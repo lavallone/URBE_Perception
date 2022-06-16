@@ -119,8 +119,7 @@ class ToolKit:
             t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
             t.start()
             threads.append(t)
-            if  i == (0,30):
-                break
+            break
         
         for thread in threads:
             thread.join()
