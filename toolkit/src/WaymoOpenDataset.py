@@ -85,8 +85,7 @@ class ToolKit:
                     obj_id = label["id"]
                     #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
                     d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
-                    s = json.dump(d)
-                    label_file.write(s)
+                    json.dump(d, label_file)
             except:
                  pass
             label_file.close()
@@ -109,21 +108,21 @@ class ToolKit:
         self.delete_files(glob.glob("{}/*.png".format(self.camera_images_dir), recursive=True))
         self.delete_files(glob.glob("{}/*.txt".format(self.camera_labels_dir), recursive=True))
         self.delete_files(glob.glob("{}/*.json".format(self.camera_labels_dir), recursive=True))
-        # open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
+        open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
 
-        # # Convert tfrecord to a list
-        # datasetAsList = list(self.dataset.as_numpy_iterator())
-        # totalFrames = len(datasetAsList)
+        # Convert tfrecord to a list
+        datasetAsList = list(self.dataset.as_numpy_iterator())
+        totalFrames = len(datasetAsList)
 
-        # threads = []
-        # for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
-        #     t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
-        #     t.start()
-        #     threads.append(t)
-        #     break
+        threads = []
+        for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
+            t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
+            t.start()
+            threads.append(t)
+            break
         
-        # for thread in threads:
-        #     thread.join()s
+        for thread in threads:
+            thread.join()s
         
         print("################# Finished #################")
             
