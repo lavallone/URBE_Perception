@@ -74,11 +74,6 @@ class ToolKit:
             camera_name = camera["name"]
             #label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
             label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
-            d = {
-                "id" : obj_id,
-                "type" : obj_type,
-                "bbox" : [x, y, length, width]
-                }
             try:
                 labels = camera["labels"]
                 for label in labels:
@@ -91,6 +86,7 @@ class ToolKit:
                     obj_type = label["type"]
                     obj_id = label["id"]
                     #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
+                    d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
                     json.dump(d, label_file)
             except:
                 pass
