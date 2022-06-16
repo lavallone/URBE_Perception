@@ -75,8 +75,7 @@ class ToolKit:
             #with open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w") as label_file:
             try:
                 labels = camera["labels"]
-                d_list = []
-                dd = {}
+                d = {}
                 for i, label in enumerate(labels): # iteriamo sulle labels di una singola immagine
                     x = label["box"]["centerX"]
                     y = label["box"]["centerY"]
@@ -87,12 +86,9 @@ class ToolKit:
                     obj_type = label["type"]
                     obj_id = label["id"]
                     #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
-                    d = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
-                    d_list.append(d)
-                    #json.dump(d, label_file)
-                    #label_file.write()
-                    dd[i] = d 
-                print(dd)
+                    d_label = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
+                    d[i] = d_label 
+                json.dump(d, label_file)
             except:
                  pass
             label_file.close()
