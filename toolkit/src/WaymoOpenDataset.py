@@ -115,7 +115,7 @@ class ToolKit:
         totalFrames = len(datasetAsList)
 
         threads = []
-        for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
+        for i in self.batch(range(totalFrames), 5): # ogni thread si occupa di 30 frame alla volta
             t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
             t.start()
             threads.append(t)
