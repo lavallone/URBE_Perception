@@ -29,6 +29,7 @@ if __name__=="__main__":
     
     iteration = 0
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
+        break
         iteration = iteration + 1
         
         toolkit.assign_segment(segment)
