@@ -106,7 +106,7 @@ class ToolKit:
             self.extract_labels(frameIdx, frame)
 
     # Function to call to extract images
-    def extract_camera_images(self):
+    def extract_camera_images(self, seg_index):
         
         # clear images and labels from previous file
         self.delete_files(glob.glob("{}/*.png".format(self.camera_images_dir), recursive=True))

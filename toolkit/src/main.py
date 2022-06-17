@@ -13,13 +13,16 @@ if __name__=="__main__":
     
     iteration = 0
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
+        seg_dir = segment[:-19]
+        print(seg_dir)
+        break
         iteration = iteration + 1
         toolkit.assign_segment(segment)
         
         start = time.time()
-        #t = threading.Thread(target=toolkit.extract_camera_images)
-        #t.start()
-        #t.join()
+        t = threading.Thread(target=toolkit.extract_camera_images, args=[seg_index])
+        t.start()
+        t.join()
         end = time.time()
         elapsed = end - start
         
