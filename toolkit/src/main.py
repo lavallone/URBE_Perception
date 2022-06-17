@@ -29,7 +29,6 @@ if __name__=="__main__":
     
     iteration = 0
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
-        break
         iteration = iteration + 1
         
         toolkit.assign_segment(segment)
@@ -44,5 +43,5 @@ if __name__=="__main__":
         #toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
-        if iteration == 1:
+        if iteration == 3:
             break 
