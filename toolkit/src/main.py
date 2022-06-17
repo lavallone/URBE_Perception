@@ -53,7 +53,6 @@ if __name__=="__main__":
         
         toolkit.assign_segment(segment)
         
-        elapsed=0
         if iteration == 3:
             start = time.time()
             list_processed_segments.append(segment)
@@ -63,9 +62,9 @@ if __name__=="__main__":
             end = time.time()
             elapsed = end - start
         
-        toolkit.save_video()
-        #toolkit.consolidate()
-        print(timedelta(seconds=elapsed))
+            toolkit.save_video()
+            #toolkit.consolidate()
+            print(timedelta(seconds=elapsed))
         
         if iteration == 3: # for controlling how many segments we're going to process
             break 

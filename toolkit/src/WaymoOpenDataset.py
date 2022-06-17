@@ -235,12 +235,9 @@ class ToolKit:
             #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
             #size = (width, height)
         
-        print(len(img_array))
-        print(img_array[0])
         height, width, _ = img_array[0].shape
         size = (width, height)
-        #stat_data_file.close()    
-        #json_label.close()
+        #stat_data_file.close()
         
         # CREAZIONE DEL VIDEO VERO E PROPRIO
         out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
