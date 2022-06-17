@@ -200,7 +200,8 @@ class ToolKit:
             front_image_list = []
             for camera in cameraList[:3]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
-                label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
+                json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
+                label = json.load(json_label)
                 
                 image = self.process_image(image, label) #!!!#
                 image = cv2.resize(image, (504, 336))
@@ -210,7 +211,8 @@ class ToolKit:
             side_image_list = []
             for camera in cameraList[3:]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
-                label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
+                json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
+                label = json.load(json_label)
                 
                 image = self.process_image(image, label) #!!!#
                 image = cv2.resize(image, (504, 231)) # resize diverso
@@ -228,6 +230,7 @@ class ToolKit:
             size = (width, height)
         
         #stat_data_file.close()    
+        json_label.close()
         
         # CREAZIONE DEL VIDEO VERO E PROPRIO
         out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
