@@ -16,7 +16,7 @@ def clean_directory(files):
 
                 
 def remove_directory(save_dir, list_processed_segments):
-    list_NOT_processed_segments = os. listdir(save_dir)[1:]
+    list_NOT_processed_segments = os.listdir(save_dir)[1:]
     ris = []
     for e in list_NOT_processed_segments:
         if e not in list_processed_segments:
@@ -62,11 +62,12 @@ if __name__=="__main__":
         #toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
-        print(list_processed_segments)
         
         if iteration == 3: # for controlling how many segments we're going to process
             break 
     
+    print(list_processed_segments)
+    print(os.listdir(save_dir)[1:])
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
     print("removing the useless and empty directories...")
