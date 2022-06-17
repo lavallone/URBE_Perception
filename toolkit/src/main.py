@@ -62,7 +62,7 @@ if __name__=="__main__":
         
         if iteration == 3:
             toolkit.assign_segment(segment)
-            #process_segment()
+            process_segment()
             toolkit.save_video()
             #toolkit.consolidate()
         
