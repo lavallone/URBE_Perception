@@ -69,8 +69,8 @@ if __name__=="__main__":
     
     print(list_processed_segments)
     l= os.listdir(save_dir)[1:]
-    for e in l:
-        e = e + "_with_camera_labels.tfrecord"
+    for i in range(len(l)):
+        l[i] = l[i] + "_with_camera_labels.tfrecord"
     print(l)
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
