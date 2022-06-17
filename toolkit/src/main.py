@@ -26,7 +26,7 @@ def remove_directory(save_dir, list_processed_segments):
                       
     for dir in ris:
         try:
-            shutil.rmtree(dir)
+            shutil.rmtree(save_dir + "/" + dir)
         except OSError as e:
             print("Error: %s : %s" % (dir, e.strerror))
 
