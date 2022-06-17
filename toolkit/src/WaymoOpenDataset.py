@@ -136,6 +136,7 @@ class ToolKit:
         color = (0, 255, 0)
         for label_key_value in labels.items():
             label = label_key_value[1]
+            print(label)
             #label_list = list(map(str, label.split(",")))
             startPoint = (int(float(label.bbox[0])), int(float(label.bbox[1])))
             sizePoint = (int(float(label.bbox[0]) + float(label.bbox[2])), int(float(label.bbox[1]) + float(label.bbox[3])))
