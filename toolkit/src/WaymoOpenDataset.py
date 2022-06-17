@@ -100,10 +100,8 @@ class ToolKit:
     # Function to call to extract images
     def extract_camera_images(self):
         
-        print(self.segment)
         seg_dir = self.segment[:-28]
-        print(seg_dir)
-        print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^").format(seg_dir)
+        print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(seg_dir))
         self.camera_dir = self.save_dir + "/" + seg_dir + "/camera"
         self.camera_images_dir = self.camera_dir + "/images"
         self.camera_labels_dir = self.camera_dir + "/labels"
@@ -114,7 +112,7 @@ class ToolKit:
         if not os.path.exists(self.camera_labels_dir):
             os.makedirs(self.camera_labels_dir)
         
-        #open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
+        open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
 
         # Convert tfrecord to a list
         datasetAsList = list(self.dataset.as_numpy_iterator())
