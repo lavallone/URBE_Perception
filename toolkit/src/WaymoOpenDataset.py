@@ -234,7 +234,7 @@ class ToolKit:
             size = (width, height)
         
         #stat_data_file.close()    
-        json_label.close()
+        #json_label.close()
         
         # CREAZIONE DEL VIDEO VERO E PROPRIO
         out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
