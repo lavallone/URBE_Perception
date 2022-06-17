@@ -135,6 +135,7 @@ class ToolKit:
     def process_image(self, image, labels):
         color = (0, 255, 0)
         for label in labels:
+            print(label)
             #label_list = list(map(str, label.split(",")))
             startPoint = (int(float(label.bbox[0])), int(float(label.bbox[1])))
             sizePoint = (int(float(label.bbox[0]) + float(label.bbox[2])), int(float(label.bbox[1]) + float(label.bbox[3])))
