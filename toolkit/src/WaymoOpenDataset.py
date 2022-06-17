@@ -1,4 +1,5 @@
 import os
+import glob
 from typing_extensions import dataclass_transform
 import cv2
 import threading
@@ -172,8 +173,8 @@ class ToolKit:
     
     def save_video(self):
         
-        if not os.path.isdir("{}/videos".format(self.save_dir)): # creao la directory /videos
-            os.makedirs("{}/videos".format(self.save_dir))
+        if not os.path.isdir("{}/{}/videos".format(self.save_dir, self.segment[:-28])): # creo la directory /videos
+            os.makedirs("{}/{}/videos".format(self.save_dir, self.segment[:-28]))
 
         cameraList = ['FRONT_LEFT', 'FRONT', 'FRONT_RIGHT', 'SIDE_LEFT', 'SIDE_RIGHT']
         totalFrames = len(glob.glob1(self.camera_images_dir, "*_FRONT.png"))

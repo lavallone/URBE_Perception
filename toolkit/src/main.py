@@ -25,6 +25,8 @@ def remove_directory(save_dir, list_processed_segments):
            ris.append(e[:-28])
                       
     for dir in ris:
+        if dir == "last_file.txt":
+            continue
         try:
             shutil.rmtree(save_dir + "/" + dir)
         except OSError as e:
@@ -61,7 +63,7 @@ if __name__=="__main__":
             end = time.time()
             elapsed = end - start
         
-        #toolkit.save_video()
+        toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
         
