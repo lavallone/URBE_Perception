@@ -22,7 +22,7 @@ def remove_directory(save_dir, list_processed_segments):
         e = list_NOT_processed_segments[i]
         e = e + "_with_camera_labels.tfrecord"
         if e not in list_processed_segments:
-           ris.append(e)
+           ris.append(e[:-28])
                       
     for dir in ris:
         try:
