@@ -199,7 +199,7 @@ class ToolKit:
             front_image_list = []
             for camera in cameraList[:3]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
-                label = open("{}/{}_{}.txt".format(self.camera_labels_dir, i, camera), "r")
+                label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
                 
                 image = self.process_image(image, label) #!!!#
                 image = cv2.resize(image, (504, 336))
@@ -209,7 +209,7 @@ class ToolKit:
             side_image_list = []
             for camera in cameraList[3:]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
-                label = open("{}/{}_{}.txt".format(self.camera_labels_dir, i, camera), "r")
+                label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
                 
                 image = self.process_image(image, label) #!!!#
                 image = cv2.resize(image, (504, 231)) # resize diverso
