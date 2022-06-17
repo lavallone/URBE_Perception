@@ -237,10 +237,10 @@ class ToolKit:
         #json_label.close()
         
         # CREAZIONE DEL VIDEO VERO E PROPRIO
-        out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
-        for i in range(len(img_array)):
-            out.write(img_array[i])
-        out.release()
+        #out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
+        #for i in range(len(img_array)):
+            #out.write(img_array[i])
+        #out.release()
 
     #########################################################################
     # Consolidate Object Count per Camera and frontal_velocity, weather, time and location --> abbastanza inutile
