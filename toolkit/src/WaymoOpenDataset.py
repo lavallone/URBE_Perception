@@ -171,11 +171,15 @@ class ToolKit:
 
         return image
     
+    # Devo riuscire a rendere "indipendente" la chiamata a quetsa funzione
     def save_video(self):
         
         if not os.path.isdir("{}/{}/videos".format(self.save_dir, self.segment[:-28])): # creo la directory /videos
             os.makedirs("{}/{}/videos".format(self.save_dir, self.segment[:-28]))
 
+        self.camera_dir = self.save_dir + "/" + self.segment[:-28] + "/camera"
+        self.camera_images_dir = self.camera_dir + "/images"
+        self.camera_labels_dir = self.camera_dir + "/labels"
         cameraList = ['FRONT_LEFT', 'FRONT', 'FRONT_RIGHT', 'SIDE_LEFT', 'SIDE_RIGHT']
         totalFrames = len(glob.glob1(self.camera_images_dir, "*_FRONT.png"))
         self.frame_type_unknown = None
@@ -227,8 +231,6 @@ class ToolKit:
             side_view = np.hstack((side_image_list[0], data_image, side_image_list[1]))
             
             frame_view = np.vstack((front_view, side_view))
-            #height, width, _ = frame_view.shape
-            #size = (width, height)
             img_array.append(frame_view) # appendiamo questo frame a una lista
 
             #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
