@@ -49,10 +49,11 @@ if __name__=="__main__":
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         iteration = iteration + 1
         
-        toolkit.assign_segment(segment)
+        #toolkit.assign_segment(segment)
         
         elapsed=0
         if  iteration != 1:
+            toolkit.assign_segment(segment)
             start = time.time()
             list_processed_segments.append(segment)
             t = threading.Thread(target=toolkit.extract_camera_images)
