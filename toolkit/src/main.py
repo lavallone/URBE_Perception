@@ -19,6 +19,7 @@ def remove_directory(save_dir, list_processed_segments):
     list_NOT_processed_segments = os.listdir(save_dir)[1:]
     ris = []
     for e in list_NOT_processed_segments:
+        e = e + "_with_camera_labels.tfrecord"
         if e not in list_processed_segments:
            ris.append(e)
            
@@ -67,7 +68,10 @@ if __name__=="__main__":
             break 
     
     print(list_processed_segments)
-    print(os.listdir(save_dir)[1:])
+    l= os.listdir(save_dir)[1:]
+    for e in l:
+        e = e + "_with_camera_labels.tfrecord"
+    print(l)
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
     print("removing the useless and empty directories...")
