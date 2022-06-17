@@ -55,9 +55,9 @@ if __name__=="__main__":
         if  iteration != 1:
             start = time.time()
             list_processed_segments.append(segment)
-            #t = threading.Thread(target=toolkit.extract_camera_images)
-            #t.start()
-            #t.join()
+            t = threading.Thread(target=toolkit.extract_camera_images)
+            t.start()
+            t.join()
             end = time.time()
             elapsed = end - start
         
