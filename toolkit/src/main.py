@@ -33,14 +33,15 @@ if __name__=="__main__":
         
         toolkit.assign_segment(segment)
         
-        start = time.time()
-        t = threading.Thread(target=toolkit.extract_camera_images)
-        t.start()
-        t.join()
-        end = time.time()
-        elapsed = end - start
+        if  iteration != 1:
+            start = time.time()
+            t = threading.Thread(target=toolkit.extract_camera_images)
+            t.start()
+            t.join()
+            end = time.time()
+            elapsed = end - start
         
-        #toolkit.save_video()
+        toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
         
