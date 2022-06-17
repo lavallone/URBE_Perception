@@ -112,7 +112,8 @@ class ToolKit:
         if not os.path.exists(self.camera_labels_dir):
             os.makedirs(self.camera_labels_dir)
         
-        open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
+        f = open("{}/camera/last_file.txt".format(self.save_dir), 'w')
+        f.write(self.segment)
 
         # Convert tfrecord to a list
         datasetAsList = list(self.dataset.as_numpy_iterator())
