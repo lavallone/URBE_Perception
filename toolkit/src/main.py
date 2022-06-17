@@ -51,6 +51,7 @@ if __name__=="__main__":
         
         toolkit.assign_segment(segment)
         
+        elapsed=0
         if iteration == 3:
             start = time.time()
             list_processed_segments.append(segment)
