@@ -33,7 +33,6 @@ def remove_directory(save_dir, list_processed_segments):
             print("Error: %s : %s" % (dir, e.strerror))
 
 def process_segment():
-    toolkit.assign_segment(segment)
     start = time.time()
     list_processed_segments.append(segment)
     t = threading.Thread(target=toolkit.extract_camera_images)
@@ -62,6 +61,7 @@ if __name__=="__main__":
         iteration = iteration + 1
         
         if iteration == 3:
+            toolkit.assign_segment(segment)
             #process_segment()
             toolkit.save_video()
             #toolkit.consolidate()
