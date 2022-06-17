@@ -238,7 +238,7 @@ class ToolKit:
         # CREAZIONE DEL VIDEO VERO E PROPRIO
         #height, width, _ = img_array[0].shape
         #size = (width, height)
-        out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
+        out = cv2.VideoWriter("{}/{}/videos/{}.avi".format(self.save_dir, self.segment[:-28], self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
         for i in range(len(img_array)):
             out.write(img_array[i])
         out.release()
