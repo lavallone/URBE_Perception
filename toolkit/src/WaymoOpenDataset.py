@@ -25,15 +25,9 @@ class ToolKit:
 
         self.save_dir = save_dir
 
-        self.camera_dir = self.save_dir + "/camera"
-        self.camera_images_dir = self.camera_dir + "/images"
-        self.camera_labels_dir = self.camera_dir + "/labels"
-        if not os.path.exists(self.camera_dir):
-            os.makedirs(self.camera_dir)
-        if not os.path.exists(self.camera_images_dir):
-            os.makedirs(self.camera_images_dir)
-        if not os.path.exists(self.camera_labels_dir):
-            os.makedirs(self.camera_labels_dir)
+        self.camera_dir = None
+        self.camera_images_dir = None
+        self.camera_labels_dir = None
 
         self.camera_list = ["UNKNOWN", "FRONT", "FRONT_LEFT", "FRONT_RIGHT", "SIDE_LEFT", "SIDE_RIGHT"]
 
