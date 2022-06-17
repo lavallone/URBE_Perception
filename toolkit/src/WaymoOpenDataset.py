@@ -135,20 +135,20 @@ class ToolKit:
     def process_image(self, image, labels):
         color = (0, 255, 0)
         for label in labels:
-            label_list = list(map(str, label.split(",")))
-            startPoint = (int(float(label_list[1])), int(float(label_list[2])))
-            sizePoint = (int(float(label_list[1]) + float(label_list[3])), int(float(label_list[2]) + float(label_list[4])))
+            #label_list = list(map(str, label.split(",")))
+            startPoint = (int(float(label.bbox[0])), int(float(label.bbox[1])))
+            sizePoint = (int(float(label.bbox[0]) + float(label.bbox[2])), int(float(label.bbox[1]) + float(label.bbox[3])))
             image = cv2.rectangle(image, startPoint, sizePoint, color=(255, 0, 0), thickness=3) # disegniamo le boxes
             # andiamo a contare per ogni frame quali oggetti ci sono --> aggiorniamo un counter globale!
-            if label_list[0] == "TYPE_UNKNOWN":
+            if label.type == "TYPE_UNKNOWN":
                 self.frame_type_unknown += 1
-            elif label_list[0] == "TYPE_VEHICLE":
+            elif label.type == "TYPE_VEHICLE":
                 self.frame_type_vehicle += 1
-            elif label_list[0] == "TYPE_PEDESTRIAN":
+            elif label.type == "TYPE_PEDESTRIAN":
                 self.frame_type_ped += 1
-            elif label_list[0] == "TYPE_SIGN":
+            elif label.type == "TYPE_SIGN":
                 self.frame_type_sign += 1
-            elif label_list[0] == "TYPE_CYCLIST":
+            elif label.type == "TYPE_CYCLIST":
                 self.frame_type_cyclist += 1
         return image
 
