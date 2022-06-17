@@ -51,8 +51,6 @@ if __name__=="__main__":
         
         toolkit.assign_segment(segment)
         
-        
-        toolkit.assign_segment(segment)
         start = time.time()
         list_processed_segments.append(segment)
         t = threading.Thread(target=toolkit.extract_camera_images)
