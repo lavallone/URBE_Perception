@@ -6,6 +6,7 @@ import pickle
 import threading
 import numpy as np
 import json
+from json.decoder import JSONDecodeError
 from urllib.parse import urlparse
 import tensorflow.compat.v1 as tf
 tf.enable_eager_execution()
@@ -139,7 +140,7 @@ class ToolKit:
             #label_list = list(map(str, label.split(",")))
             startPoint = (int(float(label["bbox"][0])), int(float(label["bbox"][1])))
             sizePoint = (int(float(label["bbox"][0]) + float(label["bbox"][2])), int(float(label["bbox"][1]) + float(label["bbox"][3])))
-            image = cv2.rectangle(image, startPoint, sizePoint, color=(255, 0, 0), thickness=3) # disegniamo le boxes
+            image = cv2.rectangle(image, startPoint, sizePoint, color, thickness=3) # disegniamo le boxes
             # andiamo a contare per ogni frame quali oggetti ci sono --> aggiorniamo un counter globale!
             if label["type"] == "TYPE_UNKNOWN":
                 self.frame_type_unknown += 1
@@ -201,9 +202,11 @@ class ToolKit:
             for camera in cameraList[:3]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
                 json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
-                label = json.load(json_label.read())
-                
-                image = self.process_image(image, label) #!!!#
+                try:
+                    label = json.load(json_label)
+                    image = self.process_image(image, label) #!!!#
+                except JSONDecodeError:
+                    pass
                 image = cv2.resize(image, (504, 336))
                 front_image_list.append(image)
             front_view = np.hstack((front_image_list[0], front_image_list[1], front_image_list[2]))
@@ -212,9 +215,11 @@ class ToolKit:
             for camera in cameraList[3:]:
                 image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
                 json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
-                label = json.load(json_label.read())
-                
-                image = self.process_image(image, label) #!!!#
+                try:
+                    label = json.load(json_label)
+                    image = self.process_image(image, label) #!!!#
+                except JSONDecodeError:
+                    pass
                 image = cv2.resize(image, (504, 231)) # resize diverso
                 side_image_list.append(image)
                 
