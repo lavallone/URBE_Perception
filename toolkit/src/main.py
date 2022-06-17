@@ -41,7 +41,7 @@ if __name__=="__main__":
             end = time.time()
             elapsed = end - start
         
-        toolkit.save_video()
+        #toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
         
