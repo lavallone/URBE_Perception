@@ -18,11 +18,12 @@ def clean_directory(files):
 def remove_directory(save_dir, list_processed_segments):
     list_NOT_processed_segments = os.listdir(save_dir)[1:]
     ris = []
-    for e in list_NOT_processed_segments:
+    for i in range(len(list_NOT_processed_segments)):
+        e = list_NOT_processed_segments[i]
         e = e + "_with_camera_labels.tfrecord"
         if e not in list_processed_segments:
            ris.append(e)
-           
+                      
     for dir in ris:
         try:
             shutil.rmtree(dir)
@@ -67,13 +68,8 @@ if __name__=="__main__":
         if iteration == 3: # for controlling how many segments we're going to process
             break 
     
-    print(list_processed_segments)
-    l= os.listdir(save_dir)[1:]
-    for i in range(len(l)):
-        l[i] = l[i] + "_with_camera_labels.tfrecord"
-    print(l)
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
     print("removing the useless and empty directories...")
-    #remove_directory(save_dir, list_processed_segments)
+    remove_directory(save_dir, list_processed_segments)
     print("Done!")
