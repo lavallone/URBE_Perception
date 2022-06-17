@@ -1,8 +1,6 @@
 import os
 from typing_extensions import dataclass_transform
 import cv2
-import glob
-import pickle
 import threading
 import numpy as np
 import json
@@ -17,7 +15,7 @@ from waymo_open_dataset.utils import  frame_utils
 from waymo_open_dataset import dataset_pb2 as open_dataset
 
 class ToolKit:
-    def __init__(self, training_dir=None, testing_dir=None, validation_dir=None, save_dir=None):
+    def __init__(self, training_dir=None, testing_dir=None, validation_dir=None, save_dir=None, seg_dir=None):
 
         self.segment = None
         
@@ -42,13 +40,6 @@ class ToolKit:
     def assign_segment(self, segment):
         self.segment = segment
         self.dataset = tf.data.TFRecordDataset("{}/{}".format(self.training_dir, self.segment), compression_type='')
-
-    def list_training_segments(self):
-        seg_list = []
-        for file in os.listdir(self.training_dir):
-            if file.endswith(".tfrecord"):
-                seg_list.append(file)
-        return seg_list
 
     def list_testing_segments(self):
         pass
@@ -106,12 +97,13 @@ class ToolKit:
             self.extract_labels(frameIdx, frame)
 
     # Function to call to extract images
-    def extract_camera_images(self, seg_index):
+    def extract_camera_images(self):
         
-        # clear images and labels from previous file
-        self.delete_files(glob.glob("{}/*.png".format(self.camera_images_dir), recursive=True))
-        self.delete_files(glob.glob("{}/*.txt".format(self.camera_labels_dir), recursive=True))
-        self.delete_files(glob.glob("{}/*.json".format(self.camera_labels_dir), recursive=True))
+        seg_dir = self.segment[:-28]
+        self.camera_dir = self.save_dir + "/" + seg_dir + "/camera"
+        self.camera_images_dir = self.camera_dir + "/images"
+        self.camera_labels_dir = self.camera_dir + "/labels"
+        
         open("{}/camera/last_file.txt".format(self.save_dir), 'w').write(self.segment)
 
         # Convert tfrecord to a list
@@ -322,13 +314,6 @@ class ToolKit:
     #########################################################################
     # Util Functions
     #########################################################################
-
-    def delete_files(self, files):
-        for f in files:
-            try:
-                os.remove(f)
-            except OSError as e:
-                print("Error: %s : %s" % (f, e.strerror))
 
     def batch(self, iterable, n=1):
         l = len(iterable)
