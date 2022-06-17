@@ -43,5 +43,8 @@ if __name__=="__main__":
         #toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
-        if iteration == 3:
+        
+        if iteration == 3: # for controlling how many segments we're going to process
             break 
+        
+    print("################# Finished #################")

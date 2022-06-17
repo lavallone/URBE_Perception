@@ -132,8 +132,6 @@ class ToolKit:
         
         for thread in threads:
             thread.join()
-        
-        print("################# Finished #################")
             
     #########################################################################
     # Save Video
