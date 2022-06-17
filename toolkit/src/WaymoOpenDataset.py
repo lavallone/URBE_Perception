@@ -100,7 +100,9 @@ class ToolKit:
     # Function to call to extract images
     def extract_camera_images(self):
         
+        print(self.segment)
         seg_dir = self.segment[:-28]
+        print(seg_dir)
         print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^").format(seg_dir)
         self.camera_dir = self.save_dir + "/" + seg_dir + "/camera"
         self.camera_images_dir = self.camera_dir + "/images"
