@@ -107,6 +107,7 @@ class ToolKit:
     def extract_camera_images(self):
         
         seg_dir = self.segment[:-28]
+        print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^").format(seg_dir)
         self.camera_dir = self.save_dir + "/" + seg_dir + "/camera"
         self.camera_images_dir = self.camera_dir + "/images"
         self.camera_labels_dir = self.camera_dir + "/labels"
