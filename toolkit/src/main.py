@@ -32,6 +32,16 @@ def remove_directory(save_dir, list_processed_segments):
         except OSError as e:
             print("Error: %s : %s" % (dir, e.strerror))
 
+def process_segment():
+    toolkit.assign_segment(segment)
+    start = time.time()
+    list_processed_segments.append(segment)
+    t = threading.Thread(target=toolkit.extract_camera_images)
+    t.start()
+    t.join()
+    end = time.time()
+    elapsed = end - start
+    print(timedelta(seconds=elapsed))
 
 if __name__=="__main__":
 
@@ -51,20 +61,10 @@ if __name__=="__main__":
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         iteration = iteration + 1
         
-        toolkit.assign_segment(segment)
-        
         if iteration == 3:
-            start = time.time()
-            list_processed_segments.append(segment)
-            t = threading.Thread(target=toolkit.extract_camera_images)
-            t.start()
-            t.join()
-            end = time.time()
-            elapsed = end - start
-        
+            #process_segment()
             toolkit.save_video()
             #toolkit.consolidate()
-            print(timedelta(seconds=elapsed))
         
         if iteration == 3: # for controlling how many segments we're going to process
             break 
