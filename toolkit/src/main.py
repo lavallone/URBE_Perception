@@ -13,7 +13,7 @@ if __name__=="__main__":
     
     iteration = 0
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
-        seg_dir = segment[:-19]
+        seg_dir = segment[:-28]
         print(seg_dir)
         break
         iteration = iteration + 1
