@@ -43,5 +43,5 @@ if __name__=="__main__":
         #toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
-        if iteration == 3:
+        if iteration == 1:
             break 

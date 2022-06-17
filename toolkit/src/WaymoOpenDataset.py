@@ -41,6 +41,13 @@ class ToolKit:
         self.segment = segment
         self.dataset = tf.data.TFRecordDataset("{}/{}".format(self.training_dir, self.segment), compression_type='')
 
+    def list_training_segments(self):
+        seg_list = []
+        for file in os.listdir(self.training_dir):
+            if file.endswith(".tfrecord"):
+                seg_list.append(file)
+        return seg_list
+    
     def list_testing_segments(self):
         pass
 
