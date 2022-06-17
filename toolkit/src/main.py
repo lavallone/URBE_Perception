@@ -6,8 +6,8 @@ import WaymoOpenDataset
 if __name__=="__main__":
 
     #### COLAB ####
-    training_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/tfrecord" # provide directory where .tfrecords are stored
-    save_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/processed" # provide a directory where data should be extracted
+    training_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training" # provide directory where .tfrecords are stored
+    save_dir = "/content/dataset/training" # provide a directory where data should be extracted
 
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
 
