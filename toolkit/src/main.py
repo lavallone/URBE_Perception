@@ -10,8 +10,10 @@ if __name__=="__main__":
     save_dir = "/content/dataset/training" # provide a directory where data should be extracted
 
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
-
+    
+    iteration = 0
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
+        iteration = iteration + 1
         toolkit.assign_segment(segment)
         
         start = time.time()
@@ -24,4 +26,5 @@ if __name__=="__main__":
         toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
-        break # in questo modo processo un solo segmento
+        if iteration == 3:
+            break 
