@@ -228,8 +228,8 @@ class ToolKit:
             
             frame_view = np.vstack((front_view, side_view))
             height, width, _ = frame_view.shape
-            size = (width, height)
             img_array.append(frame_view) # appendiamo questo frame a una lista
+            size = (width, height)
 
             #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
         
