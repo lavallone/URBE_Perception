@@ -208,6 +208,7 @@ class ToolKit:
                     pass
                 image = cv2.resize(image, (504, 336))
                 front_image_list.append(image)
+                json_label.close()
             front_view = np.hstack((front_image_list[0], front_image_list[1], front_image_list[2]))
 
             side_image_list = []
@@ -221,26 +222,29 @@ class ToolKit:
                     pass
                 image = cv2.resize(image, (504, 231)) # resize diverso
                 side_image_list.append(image)
+                json_label.close()
                 
             data_image = np.zeros((231, 504, 3), np.uint8)
             data_image = self.write_text(data_image) #!!!#
             side_view = np.hstack((side_image_list[0], data_image, side_image_list[1]))
             
             frame_view = np.vstack((front_view, side_view))
-            height, width, layers = frame_view.shape
+            #height, width, layers = frame_view.shape
             img_array.append(frame_view) # appendiamo questo frame a una lista
 
             #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
-            size = (width, height)
+            #size = (width, height)
         
+        height, width, _ = img_array[0].shape
+        size = (width, height)
         #stat_data_file.close()    
         #json_label.close()
         
         # CREAZIONE DEL VIDEO VERO E PROPRIO
-        #out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
-        #for i in range(len(img_array)):
-            #out.write(img_array[i])
-        #out.release()
+        out = cv2.VideoWriter("{}/videos/{}.avi".format(self.save_dir, self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
+        for i in range(len(img_array)):
+            out.write(img_array[i])
+        out.release()
 
     #########################################################################
     # Consolidate Object Count per Camera and frontal_velocity, weather, time and location --> abbastanza inutile
