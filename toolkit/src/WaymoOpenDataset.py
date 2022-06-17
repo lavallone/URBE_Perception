@@ -227,17 +227,17 @@ class ToolKit:
             side_view = np.hstack((side_image_list[0], data_image, side_image_list[1]))
             
             frame_view = np.vstack((front_view, side_view))
-            height, width, _ = frame_view.shape
+            #height, width, _ = frame_view.shape
+            #size = (width, height)
             img_array.append(frame_view) # appendiamo questo frame a una lista
-            size = (width, height)
 
             #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
         
         #stat_data_file.close()
         
         # CREAZIONE DEL VIDEO VERO E PROPRIO
-        #height, width, _ = img_array[0].shape
-        #size = (width, height)
+        height, width, _ = img_array[0].shape
+        size = (width, height)
         out = cv2.VideoWriter("{}/{}/videos/{}.avi".format(self.save_dir, self.segment[:-28], self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
         for i in range(len(img_array)):
             out.write(img_array[i])

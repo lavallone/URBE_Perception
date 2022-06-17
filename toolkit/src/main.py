@@ -60,13 +60,13 @@ if __name__=="__main__":
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         iteration = iteration + 1
         
-        if iteration == 1:
-            toolkit.assign_segment(segment)
-            process_segment()
-            toolkit.save_video()
-            #toolkit.consolidate()
         
-        if iteration == 1: # for controlling how many segments we're going to process
+        toolkit.assign_segment(segment)
+        process_segment()
+        toolkit.save_video()
+        #toolkit.consolidate()
+        
+        if iteration == 4: # for controlling how many segments we're going to process
             break 
     
     print("################# Processing is Finished ;) #################")
