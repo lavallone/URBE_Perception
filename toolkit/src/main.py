@@ -45,8 +45,9 @@ def process_segment():
 if __name__=="__main__":
 
     #### COLAB ####
-    training_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training" # provide directory where .tfrecords are stored
-    save_dir = "/content/dataset/training" # provide a directory where data should be extracted
+    training_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/archived_files" # provide directory where .tfrecords are stored
+    #save_dir = "/content/dataset/training" # provide a directory where data should be extracted
+    save_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/individual_files"
     
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
     
@@ -63,10 +64,10 @@ if __name__=="__main__":
         
         toolkit.assign_segment(segment)
         process_segment()
-        toolkit.save_video()
+        #toolkit.save_video()
         #toolkit.consolidate()
         
-        if iteration == 4: # for controlling how many segments we're going to process
+        if iteration == 100: # for controlling how many segments we're going to process
             break 
     
     print("################# Processing is Finished ;) #################")
