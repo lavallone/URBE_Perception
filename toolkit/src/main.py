@@ -49,24 +49,23 @@ if __name__=="__main__":
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         iteration = iteration + 1
         
-        #toolkit.assign_segment(segment)
+        toolkit.assign_segment(segment)
         
-        elapsed=0
-        if  iteration != 1:
-            toolkit.assign_segment(segment)
-            start = time.time()
-            list_processed_segments.append(segment)
-            t = threading.Thread(target=toolkit.extract_camera_images)
-            t.start()
-            t.join()
-            end = time.time()
-            elapsed = end - start
+        
+        toolkit.assign_segment(segment)
+        start = time.time()
+        list_processed_segments.append(segment)
+        t = threading.Thread(target=toolkit.extract_camera_images)
+        t.start()
+        t.join()
+        end = time.time()
+        elapsed = end - start
         
         #toolkit.save_video()
         #toolkit.consolidate()
         print(timedelta(seconds=elapsed))
         
-        if iteration == 3: # for controlling how many segments we're going to process
+        if iteration == 2: # for controlling how many segments we're going to process
             break 
     
     print("################# Processing is Finished ;) #################")
