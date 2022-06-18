@@ -51,18 +51,24 @@ if __name__=="__main__":
     
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
     
-    # clear images and labels from previous executions
-    clean_directory( glob.glob('{}/**/*.txt'.format(save_dir), recursive=True) )
-    clean_directory( glob.glob('{}/**/*.json'.format(save_dir), recursive=True) )
-    clean_directory( glob.glob('{}/**/*.png'.format(save_dir), recursive=True) )
+    # clear images and labels from previous executions (COMMENT IF NOT NEEDED)
+    #clean_directory( glob.glob('{}/**/*.txt'.format(save_dir), recursive=True) )
+    #clean_directory( glob.glob('{}/**/*.json'.format(save_dir), recursive=True) )
+    #clean_directory( glob.glob('{}/**/*.png'.format(save_dir), recursive=True) )
     
     iteration = 0
     list_processed_segments = []
+    num_segments = len(toolkit.list_training_segments())
     print(toolkit.list_training_segments())
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         break
         iteration = iteration + 1
-        
+        num_segments = num_segments - 1
+        print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing |{}| ^^^^^^^^^^^^^^^^^^^^^^".format(segment[:-28]))
+        if num_segments != 0:
+            print("^^^^^^^^^^^^^^^^^^^^^^     {} segments left     ^^^^^^^^^^^^^^^^^^^^^^".format())
+        else:
+            print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
         
         toolkit.assign_segment(segment)
         process_segment()
@@ -74,6 +80,9 @@ if __name__=="__main__":
     
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
-    print("removing the useless and empty directories...")
-    remove_directory(save_dir, list_processed_segments)
-    print("Done!")
+    # COMMENT THIS PART IF NOT NEEDED
+    #print("removing the useless and empty directories...")
+    #remove_directory(save_dir, list_processed_segments)
+    #print("Done!")
+    
+    # segment-1022527355599519580_4866_960_4886_960
