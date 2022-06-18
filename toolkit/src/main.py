@@ -51,10 +51,12 @@ if __name__=="__main__":
     
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
     
+    print("cleaning directories...")
     # clear images and labels from previous executions (COMMENT IF NOT NEEDED)
     clean_directory( glob.glob('{}/**/*.txt'.format(save_dir), recursive=True) )
     clean_directory( glob.glob('{}/**/*.json'.format(save_dir), recursive=True) )
     clean_directory( glob.glob('{}/**/*.png'.format(save_dir), recursive=True) )
+    print("Done!")
     
     iteration = 0
     list_processed_segments = []
