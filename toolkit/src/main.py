@@ -53,9 +53,9 @@ if __name__=="__main__":
     
     print("cleaning directories...")
     # clear images and labels from previous executions (COMMENT IF NOT NEEDED)
-    clean_directory( glob.glob('{}/**/*.txt'.format(save_dir), recursive=True) )
-    clean_directory( glob.glob('{}/**/*.json'.format(save_dir), recursive=True) )
-    clean_directory( glob.glob('{}/**/*.png'.format(save_dir), recursive=True) )
+    #clean_directory( glob.glob('{}/**/*.txt'.format(save_dir), recursive=True) )
+    #clean_directory( glob.glob('{}/**/*.json'.format(save_dir), recursive=True) )
+    #clean_directory( glob.glob('{}/**/*.png'.format(save_dir), recursive=True) )
     print("Done!")
     
     iteration = 0
@@ -71,9 +71,9 @@ if __name__=="__main__":
         else:
             print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
         
-        toolkit.assign_segment(segment)
-        process_segment()
-        #toolkit.save_video()
+        #toolkit.assign_segment(segment)
+        #process_segment()
+        toolkit.save_video()
         #toolkit.consolidate()
         
         if iteration == 100: # for controlling how many segments we're going to process
@@ -83,5 +83,5 @@ if __name__=="__main__":
     print("Number of processed segments: {}".format(len(list_processed_segments)))
     # COMMENT THIS PART IF NOT NEEDED
     print("removing the useless and empty directories...")
-    remove_directory(save_dir, list_processed_segments)
+    #remove_directory(save_dir, list_processed_segments)
     print("Done!")
