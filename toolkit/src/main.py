@@ -58,7 +58,9 @@ if __name__=="__main__":
     
     iteration = 0
     list_processed_segments = []
+    print(toolkit.list_training_segments())
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
+        break
         iteration = iteration + 1
         
         
