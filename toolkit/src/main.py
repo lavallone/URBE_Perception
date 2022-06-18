@@ -70,8 +70,8 @@ if __name__=="__main__":
             print("^^^^^^^^^^^^^^^^^^^^^^     {} segments left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_segments))
         else:
             print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
+        toolkit.assign_segment(segment)
         
-        #toolkit.assign_segment(segment)
         #process_segment()
         toolkit.save_video()
         #toolkit.consolidate()
