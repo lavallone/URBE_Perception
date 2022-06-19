@@ -73,11 +73,15 @@ if __name__=="__main__":
         toolkit.assign_segment(segment)
         
         #process_segment()
-        toolkit.save_video()
+        #toolkit.save_video()
         #toolkit.consolidate()
         
         if iteration == 100: # for controlling how many segments we're going to process
             break 
+    
+    for segment in toolkit.list_training_segments():
+        if not os.path.isdir("{}/{}/videos".format(save_dir, segment[:-28])):
+            print("------------ {} ----------".format(segment[:-28]))
     
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))

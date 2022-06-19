@@ -170,81 +170,79 @@ class ToolKit:
 
         return image
     
-    # Devo riuscire a rendere "indipendente" la chiamata a quetsa funzione
     def save_video(self):
         
         if not os.path.isdir("{}/{}/videos".format(self.save_dir, self.segment[:-28])): # creo la directory /videos
-            print("@@@@@@@@@ {}".format(self.segment[:-28]))
-            #os.makedirs("{}/{}/videos".format(self.save_dir, self.segment[:-28]))
+            os.makedirs("{}/{}/videos".format(self.save_dir, self.segment[:-28]))
 
-        # self.camera_dir = self.save_dir + "/" + self.segment[:-28] + "/camera"
-        # self.camera_images_dir = self.camera_dir + "/images"
-        # self.camera_labels_dir = self.camera_dir + "/labels"
+        self.camera_dir = self.save_dir + "/" + self.segment[:-28] + "/camera"
+        self.camera_images_dir = self.camera_dir + "/images"
+        self.camera_labels_dir = self.camera_dir + "/labels"
         
-        # cameraList = ['FRONT_LEFT', 'FRONT', 'FRONT_RIGHT', 'SIDE_LEFT', 'SIDE_RIGHT']
-        # totalFrames = len(glob.glob1(self.camera_images_dir, "*_FRONT.png"))
-        # self.frame_type_unknown = None
-        # self.frame_type_vehicle = None
-        # self.frame_type_ped = None
-        # self.frame_type_sign = None
-        # self.frame_type_cyclist = None
-        # print("Found {} frames.".format(totalFrames))
+        cameraList = ['FRONT_LEFT', 'FRONT', 'FRONT_RIGHT', 'SIDE_LEFT', 'SIDE_RIGHT']
+        totalFrames = len(glob.glob1(self.camera_images_dir, "*_FRONT.png"))
+        self.frame_type_unknown = None
+        self.frame_type_vehicle = None
+        self.frame_type_ped = None
+        self.frame_type_sign = None
+        self.frame_type_cyclist = None
+        print("Found {} frames.".format(totalFrames))
 
-        # #stat_data_file = open("{}/videos/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
+        #stat_data_file = open("{}/videos/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
 
-        # img_array = []
+        img_array = []
 
-        # for i in range(totalFrames): # per ogni frame
+        for i in range(totalFrames): # per ogni frame
 
-        #     self.frame_type_unknown = 0
-        #     self.frame_type_vehicle = 0
-        #     self.frame_type_ped = 0
-        #     self.frame_type_sign = 0
-        #     self.frame_type_cyclist = 0
+            self.frame_type_unknown = 0
+            self.frame_type_vehicle = 0
+            self.frame_type_ped = 0
+            self.frame_type_sign = 0
+            self.frame_type_cyclist = 0
 
-        #     front_image_list = []
-        #     for camera in cameraList[:3]:
-        #         image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
-        #         json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
-        #         try:
-        #             label = json.load(json_label)
-        #             image = self.process_image(image, label) #!!!#
-        #         except JSONDecodeError:
-        #             pass
-        #         image = cv2.resize(image, (504, 336))
-        #         front_image_list.append(image)
-        #     front_view = np.hstack((front_image_list[0], front_image_list[1], front_image_list[2]))
+            front_image_list = []
+            for camera in cameraList[:3]:
+                image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
+                json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
+                try:
+                    label = json.load(json_label)
+                    image = self.process_image(image, label) #!!!#
+                except JSONDecodeError:
+                    pass
+                image = cv2.resize(image, (504, 336))
+                front_image_list.append(image)
+            front_view = np.hstack((front_image_list[0], front_image_list[1], front_image_list[2]))
 
-        #     side_image_list = []
-        #     for camera in cameraList[3:]:
-        #         image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
-        #         json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
-        #         try:
-        #             label = json.load(json_label)
-        #             image = self.process_image(image, label) #!!!#
-        #         except JSONDecodeError:
-        #             pass
-        #         image = cv2.resize(image, (504, 231)) # resize diverso
-        #         side_image_list.append(image)
+            side_image_list = []
+            for camera in cameraList[3:]:
+                image = cv2.imread("{}/{}_{}.png".format(self.camera_images_dir, i, camera), cv2.IMREAD_UNCHANGED)
+                json_label = open("{}/{}_{}.json".format(self.camera_labels_dir, i, camera), "r")
+                try:
+                    label = json.load(json_label)
+                    image = self.process_image(image, label) #!!!#
+                except JSONDecodeError:
+                    pass
+                image = cv2.resize(image, (504, 231)) # resize diverso
+                side_image_list.append(image)
                 
-        #     data_image = np.zeros((231, 504, 3), np.uint8)
-        #     data_image = self.write_text(data_image) #!!!#
-        #     side_view = np.hstack((side_image_list[0], data_image, side_image_list[1]))
+            data_image = np.zeros((231, 504, 3), np.uint8)
+            data_image = self.write_text(data_image) #!!!#
+            side_view = np.hstack((side_image_list[0], data_image, side_image_list[1]))
             
-        #     frame_view = np.vstack((front_view, side_view))
-        #     img_array.append(frame_view) # appendiamo questo frame a una lista
+            frame_view = np.vstack((front_view, side_view))
+            img_array.append(frame_view) # appendiamo questo frame a una lista
 
-        #     #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
+            #stat_data_file.write("{},{},{},{},{},{}\n".format(i, self.frame_type_unknown, self.frame_type_vehicle, self.frame_type_ped, self.frame_type_sign, self.frame_type_cyclist))
         
-        # #stat_data_file.close()
+        #stat_data_file.close()
         
-        # # CREAZIONE DEL VIDEO VERO E PROPRIO
-        # height, width, _ = img_array[0].shape
-        # size = (width, height)
-        # out = cv2.VideoWriter("{}/{}/videos/{}.avi".format(self.save_dir, self.segment[:-28], self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
-        # for i in range(len(img_array)):
-        #     out.write(img_array[i])
-        # out.release()
+        # CREAZIONE DEL VIDEO VERO E PROPRIO
+        height, width, _ = img_array[0].shape
+        size = (width, height)
+        out = cv2.VideoWriter("{}/{}/videos/{}.avi".format(self.save_dir, self.segment[:-28], self.segment[:-9]), cv2.VideoWriter_fourcc(*'DIVX'), 10, size)
+        for i in range(len(img_array)):
+            out.write(img_array[i])
+        out.release()
 
     #########################################################################
     # Consolidate Object Count per Camera and frontal_velocity, weather, time and location --> abbastanza inutile
