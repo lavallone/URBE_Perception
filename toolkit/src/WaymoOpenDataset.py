@@ -174,7 +174,7 @@ class ToolKit:
     def save_video(self, l):
         
         if not os.path.isdir("{}/{}/videos".format(self.save_dir, self.segment[:-28])): # creo la directory /videos
-            l.append(self.segment[:-28])
+            print("@@@@@@@@@ {}".format(self.segment[:-28]))
             #os.makedirs("{}/{}/videos".format(self.save_dir, self.segment[:-28]))
 
         # self.camera_dir = self.save_dir + "/" + self.segment[:-28] + "/camera"

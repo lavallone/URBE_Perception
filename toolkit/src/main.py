@@ -62,7 +62,6 @@ if __name__=="__main__":
     list_processed_segments = []
     num_segments = len(toolkit.list_training_segments())
     
-    l=[]
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         iteration = iteration + 1
         num_segments = num_segments - 1
@@ -74,13 +73,12 @@ if __name__=="__main__":
         toolkit.assign_segment(segment)
         
         #process_segment()
-        toolkit.save_video(l)
+        toolkit.save_video()
         #toolkit.consolidate()
         
         if iteration == 100: # for controlling how many segments we're going to process
             break 
     
-    print(l)
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
     # COMMENT THIS PART IF NOT NEEDED
