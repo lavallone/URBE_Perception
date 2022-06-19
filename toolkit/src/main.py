@@ -7,26 +7,8 @@ import threading
 from datetime import timedelta
 import WaymoOpenDataset
 
-def remove_directory(save_dir, list_processed_segments):
-    list_NOT_processed_segments = os.listdir(save_dir)[1:]
-    ris = []
-    for i in range(len(list_NOT_processed_segments)):
-        e = list_NOT_processed_segments[i]
-        e = e + "_with_camera_labels.tfrecord"
-        if e not in list_processed_segments:
-           ris.append(e[:-28])
-                      
-    for dir in ris:
-        if dir == "last_file.txt":
-            continue
-        try:
-            shutil.rmtree(save_dir + "/" + dir)
-        except OSError as e:
-            print("Error: %s : %s" % (dir, e.strerror))
-
 def process_segment():
     start = time.time()
-    list_processed_segments.append(segment)
     t = threading.Thread(target=toolkit.extract_camera_images)
     t.start()
     t.join()
