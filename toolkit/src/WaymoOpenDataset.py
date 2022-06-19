@@ -338,7 +338,7 @@ class ToolKit:
         for ndx in range(0, l, n):
             yield iterable[ndx:min(ndx + n, l)]
             
-    def clean_directory(files):
+    def clean_directory(self, files):
         for f in files:
             try:
                 os.remove(f)
