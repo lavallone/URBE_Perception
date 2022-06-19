@@ -171,7 +171,7 @@ class ToolKit:
         return image
     
     # Devo riuscire a rendere "indipendente" la chiamata a quetsa funzione
-    def save_video(self, l):
+    def save_video(self):
         
         if not os.path.isdir("{}/{}/videos".format(self.save_dir, self.segment[:-28])): # creo la directory /videos
             print("@@@@@@@@@ {}".format(self.segment[:-28]))
