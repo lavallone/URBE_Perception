@@ -51,7 +51,7 @@ if __name__=="__main__":
                 break 
         
         print("################# Processing is Finished ;) #################")
-        print("Number of processed segments: {}".format(num_segments))
+        print("Number of processed segments: {}".format(iteration))
         
     elif args.mode == "del": # abbiamo intenzione di eliminare la cartelle relative a questi segmenti
         print("removing the indicated segments directories...")
