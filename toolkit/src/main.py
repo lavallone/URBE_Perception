@@ -62,6 +62,7 @@ if __name__=="__main__":
     list_processed_segments = []
     num_segments = len(toolkit.list_training_segments())
     
+    l=[]
     for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
         iteration = iteration + 1
         num_segments = num_segments - 1
@@ -73,7 +74,6 @@ if __name__=="__main__":
         toolkit.assign_segment(segment)
         
         #process_segment()
-        l=[]
         toolkit.save_video(l)
         #toolkit.consolidate()
         
