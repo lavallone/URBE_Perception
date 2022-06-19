@@ -82,6 +82,6 @@ if __name__=="__main__":
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
     # COMMENT THIS PART IF NOT NEEDED
-    #print("removing the useless and empty directories...")
-    #remove_directory(save_dir, list_processed_segments)
-    #print("Done!")
+    print("removing the 'not anymore usefull' directories...")
+    remove_directory(save_dir, list_processed_segments)
+    print("Done!")
