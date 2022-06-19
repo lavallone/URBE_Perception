@@ -1,6 +1,4 @@
 import cv2
-import pickle
-import open3d as o3d
 
 # Add labels and bounding boxes to verify the data
 def process_image(image, labels):
@@ -32,13 +30,3 @@ if __name__ == "__main__":
         cv2.imshow("{}_{}".format(frameNum, camera), img)
     cv2.waitKey()
     cv2.destroyAllWindows()
-
-    # visualize range data
-
-    laserDir = "{}/laser/images".format(saveDir)
-    points = pickle.load(open("{}/{}_points.data".format(laserDir, frameNum), "rb"))
-    cp_points = pickle.load(open("{}/{}_cp_points.data".format(laserDir, frameNum), "rb"))
-
-    depth_3d_pcd = o3d.geometry.PointCloud()
-    depth_3d_pcd.points = o3d.utility.Vector3dVector(points[0])
-    o3d.visualization.draw_geometries([depth_3d_pcd])

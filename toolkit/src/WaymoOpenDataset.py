@@ -58,34 +58,36 @@ class ToolKit:
         for index, data in enumerate(frame.images):
             decodedImage = tf.io.decode_jpeg(data.image, channels=3, dct_method='INTEGER_ACCURATE')
             decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
-            cv2.imwrite("{}/{}_{}.png".format(self.camera_images_dir, ndx, self.camera_list[data.name]), decodedImage)
+            if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
+                cv2.imwrite("{}/{}_{}.png".format(self.camera_images_dir, ndx, self.camera_list[data.name]), decodedImage)
 
     # Extract Camera Label
     def extract_labels(self, ndx, frame):
         for index, data in enumerate(frame.camera_labels):
-            camera = MessageToDict(data) # è un qualcosa converte il .proto file
+            camera = MessageToDict(data) # è un qualcosa che converte il .proto file
             camera_name = camera["name"]
-            #label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
-            label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
-            try:
-                labels = camera["labels"]
-                d = {}
-                for i, label in enumerate(labels): # iteriamo sulle labels di una singola immagine
-                    x = label["box"]["centerX"]
-                    y = label["box"]["centerY"]
-                    width = label["box"]["width"]
-                    length = label["box"]["length"]
-                    x = x - 0.5 * length
-                    y = y - 0.5 * width
-                    obj_type = label["type"]
-                    obj_id = label["id"]
-                    #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
-                    d_label = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
-                    d[i] = d_label 
-                json.dump(d, label_file, indent=4)
-            except:
-                 pass
-            label_file.close()
+            if camera_name=="FRONT" or  camera_name=="FRONT_LEFT" or camera_name=="FRONT_RIGHT":
+                #label_file = open("{}/{}_{}.txt".format(self.camera_labels_dir, ndx, camera_name), "w")
+                label_file = open("{}/{}_{}.json".format(self.camera_labels_dir, ndx, camera_name), "w")
+                try:
+                    labels = camera["labels"]
+                    d = {}
+                    for i, label in enumerate(labels): # iteriamo sulle labels di una singola immagine
+                        x = label["box"]["centerX"]
+                        y = label["box"]["centerY"]
+                        width = label["box"]["width"]
+                        length = label["box"]["length"]
+                        x = x - 0.5 * length
+                        y = y - 0.5 * width
+                        obj_type = label["type"]
+                        obj_id = label["id"]
+                        #label_file.write("{},{},{},{},{},{}\n".format(obj_type, x, y, length, width, obj_id))
+                        d_label = { "id" : obj_id, "type" : obj_type, "bbox" : [x, y, length, width] }
+                        d[i] = d_label 
+                    json.dump(d, label_file, indent=4)
+                except:
+                    pass
+                label_file.close()
     
     # Implemented Extraction as Threads
     def camera_image_extraction_thread(self, datasetAsList, range_value):
@@ -247,78 +249,78 @@ class ToolKit:
     #########################################################################
     # Consolidate Object Count per Camera and frontal_velocity, weather, time and location --> abbastanza inutile
     #########################################################################
-    def consolidate(self):
+    # def consolidate(self):
 
-        if not os.path.isdir("{}/consolidation".format(self.save_dir)): # crea questo folder
-            os.makedirs("{}/consolidation".format(self.save_dir))
+    #     if not os.path.isdir("{}/consolidation".format(self.save_dir)): # crea questo folder
+    #         os.makedirs("{}/consolidation".format(self.save_dir))
 
-        # Convert tfrecord to a list
-        datasetAsList = list(self.dataset.as_numpy_iterator())
-        totalFrames = len(datasetAsList)
+    #     # Convert tfrecord to a list
+    #     datasetAsList = list(self.dataset.as_numpy_iterator())
+    #     totalFrames = len(datasetAsList)
 
-        frame = open_dataset.Frame()
+    #     frame = open_dataset.Frame()
 
-        stat_file = open("{}/consolidation/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
+    #     stat_file = open("{}/consolidation/{}.csv".format(self.save_dir, self.segment[:-9]), "w")
         
-        for frameIdx in range(totalFrames): # itero su tutti i frame
+    #     for frameIdx in range(totalFrames): # itero su tutti i frame
             
-            frame.ParseFromString(datasetAsList[frameIdx])
+    #         frame.ParseFromString(datasetAsList[frameIdx])
 
-            front_list = []
-            front_left_list = []
-            front_right_list = []
-            side_left_list = []
-            side_right_list = []
+    #         front_list = []
+    #         front_left_list = []
+    #         front_right_list = []
+    #         side_left_list = []
+    #         side_right_list = []
 
-            for index, data in enumerate(frame.camera_labels):
-                type_unknown = 0
-                type_vehicle = 0
-                type_ped = 0
-                type_sign = 0
-                type_cyclist = 0
-                camera = MessageToDict(data)
-                camera_name = camera["name"]
-                try:
-                    labels = camera["labels"]
-                except:
-                    labels = None
-                if labels is not None:
-                    for label in labels:
-                        if label["type"] == "TYPE_UNKNOWN":
-                            type_unknown += 1
-                        elif label["type"] == "TYPE_VEHICLE":
-                            type_vehicle += 1
-                        elif label["type"] == "TYPE_PEDESTRIAN":
-                            type_ped += 1
-                        elif label["type"] == "TYPE_SIGN":
-                            type_sign += 1
-                        elif label["type"] == 'TYPE_CYCLIST':
-                            type_cyclist += 1
-                    if camera_name == "FRONT":
-                        front_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
-                    elif camera_name == "FRONT_LEFT":
-                        front_left_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
-                    elif camera_name == "FRONT_RIGHT":
-                        front_right_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
-                    elif camera_name == "SIDE_LEFT":
-                        side_left_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
-                    elif camera_name == "SIDE_RIGHT":
-                        side_right_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
-                else:
-                    if camera_name == "FRONT":
-                        front_list = [0, 0, 0, 0, 0]
-                    elif camera_name == "FRONT_LEFT":
-                        front_left_list = [0, 0, 0, 0, 0]
-                    elif camera_name == "FRONT_RIGHT":
-                        front_right_list = [0, 0, 0, 0, 0]
-                    elif camera_name == "SIDE_LEFT":
-                        side_left_list = [0, 0, 0, 0, 0]
-                    elif camera_name == "SIDE_RIGHT":
-                        side_right_list = [0, 0, 0, 0, 0]
-            obj_list = front_list + front_left_list + front_right_list + side_left_list + side_right_list
-            # determine the velocity
-            velocity = MessageToDict(frame.images[0]) # possiamo accedere anche al valore della velocità!!! --> utile se vogliamo ampliare il progetto
-            stat_file.write("{},{},{},{},{}\n".format(','.join([str(obj_count) for obj_count in obj_list]), ','.join([str(vel) for vel in velocity["velocity"].values()]), frame.context.stats.weather, frame.context.stats.time_of_day, frame.context.stats.location))
+    #         for index, data in enumerate(frame.camera_labels):
+    #             type_unknown = 0
+    #             type_vehicle = 0
+    #             type_ped = 0
+    #             type_sign = 0
+    #             type_cyclist = 0
+    #             camera = MessageToDict(data)
+    #             camera_name = camera["name"]
+    #             try:
+    #                 labels = camera["labels"]
+    #             except:
+    #                 labels = None
+    #             if labels is not None:
+    #                 for label in labels:
+    #                     if label["type"] == "TYPE_UNKNOWN":
+    #                         type_unknown += 1
+    #                     elif label["type"] == "TYPE_VEHICLE":
+    #                         type_vehicle += 1
+    #                     elif label["type"] == "TYPE_PEDESTRIAN":
+    #                         type_ped += 1
+    #                     elif label["type"] == "TYPE_SIGN":
+    #                         type_sign += 1
+    #                     elif label["type"] == 'TYPE_CYCLIST':
+    #                         type_cyclist += 1
+    #                 if camera_name == "FRONT":
+    #                     front_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
+    #                 elif camera_name == "FRONT_LEFT":
+    #                     front_left_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
+    #                 elif camera_name == "FRONT_RIGHT":
+    #                     front_right_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
+    #                 elif camera_name == "SIDE_LEFT":
+    #                     side_left_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
+    #                 elif camera_name == "SIDE_RIGHT":
+    #                     side_right_list = [type_unknown, type_vehicle, type_ped, type_sign, type_cyclist]
+    #             else:
+    #                 if camera_name == "FRONT":
+    #                     front_list = [0, 0, 0, 0, 0]
+    #                 elif camera_name == "FRONT_LEFT":
+    #                     front_left_list = [0, 0, 0, 0, 0]
+    #                 elif camera_name == "FRONT_RIGHT":
+    #                     front_right_list = [0, 0, 0, 0, 0]
+    #                 elif camera_name == "SIDE_LEFT":
+    #                     side_left_list = [0, 0, 0, 0, 0]
+    #                 elif camera_name == "SIDE_RIGHT":
+    #                     side_right_list = [0, 0, 0, 0, 0]
+    #         obj_list = front_list + front_left_list + front_right_list + side_left_list + side_right_list
+    #         # determine the velocity
+    #         velocity = MessageToDict(frame.images[0]) # possiamo accedere anche al valore della velocità!!! --> utile se vogliamo ampliare il progetto
+    #         stat_file.write("{},{},{},{},{}\n".format(','.join([str(obj_count) for obj_count in obj_list]), ','.join([str(vel) for vel in velocity["velocity"].values()]), frame.context.stats.weather, frame.context.stats.time_of_day, frame.context.stats.location))
 
     #########################################################################
     # Util Functions

@@ -45,9 +45,9 @@ def process_segment():
 if __name__=="__main__":
 
     #### COLAB ####
-    training_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/archived_files" # provide directory where .tfrecords are stored
+    training_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/archived_files" # provide directory where .tfrecords are stored
     #save_dir = "/content/dataset/training" # provide a directory where data should be extracted
-    save_dir = "/content/drive/MyDrive/VISIOPE/Project/dataset/training/individual_files"
+    save_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/individual_files"
     
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
     
@@ -72,9 +72,8 @@ if __name__=="__main__":
             print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
         toolkit.assign_segment(segment)
         
-        #process_segment()
-        if not os.path.isdir("{}/{}/videos".format(save_dir, segment[:-28])):
-            toolkit.save_video()
+        process_segment()
+        #toolkit.save_video()
         #toolkit.consolidate()
         
         if iteration == 100: # for controlling how many segments we're going to process
@@ -83,6 +82,6 @@ if __name__=="__main__":
     print("################# Processing is Finished ;) #################")
     print("Number of processed segments: {}".format(len(list_processed_segments)))
     # COMMENT THIS PART IF NOT NEEDED
-    print("removing the useless and empty directories...")
+    #print("removing the useless and empty directories...")
     #remove_directory(save_dir, list_processed_segments)
-    print("Done!")
+    #print("Done!")
