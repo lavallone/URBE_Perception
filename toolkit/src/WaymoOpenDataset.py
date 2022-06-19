@@ -113,6 +113,13 @@ class ToolKit:
             os.makedirs(self.camera_images_dir)
         if not os.path.exists(self.camera_labels_dir):
             os.makedirs(self.camera_labels_dir)
+            
+        print("cleaning directory...")
+        # clear images and labels from previous executions
+        clean_directory(glob.glob('{}/**/*.txt'.format(self.camera_dir), recursive=True))
+        clean_directory(glob.glob('{}/**/*.json'.format(self.camera_dir), recursive=True))
+        clean_directory(glob.glob('{}/**/*.png'.format(self.camera_dir), recursive=True))
+        print("Done!")
         
         open("{}/last_file.txt".format(self.save_dir), 'w').write(self.segment)
 
@@ -330,3 +337,10 @@ class ToolKit:
         l = len(iterable)
         for ndx in range(0, l, n):
             yield iterable[ndx:min(ndx + n, l)]
+            
+    def clean_directory(files):
+        for f in files:
+            try:
+                os.remove(f)
+            except OSError as e:
+                print("Error: %s : %s" % (f, e.strerror))

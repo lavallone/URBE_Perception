@@ -1,20 +1,12 @@
 import time
 import os
+import argparse
 import glob
 import shutil
 import threading
 from datetime import timedelta
 import WaymoOpenDataset
 
-## Util functions ##
-def clean_directory(files):
-    for f in files:
-        try:
-            os.remove(f)
-        except OSError as e:
-            print("Error: %s : %s" % (f, e.strerror))
-
-                
 def remove_directory(save_dir, list_processed_segments):
     list_NOT_processed_segments = os.listdir(save_dir)[1:]
     ris = []
@@ -43,45 +35,52 @@ def process_segment():
     print(timedelta(seconds=elapsed))
 
 if __name__=="__main__":
-
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("mode", type=str, default="add")
+    args = parser.parse_args()
+    
     #### COLAB ####
     training_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/archived_files" # provide directory where .tfrecords are stored
-    #save_dir = "/content/dataset/training" # provide a directory where data should be extracted
-    save_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/individual_files"
+    save_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/individual_files" # provide a directory where data should be extracted to
     
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
     
-    print("cleaning directories...")
-    # clear images and labels from previous executions (COMMENT IF NOT NEEDED)
-    #clean_directory( glob.glob('{}/**/*.txt'.format(save_dir), recursive=True) )
-    #clean_directory( glob.glob('{}/**/*.json'.format(save_dir), recursive=True) )
-    #clean_directory( glob.glob('{}/**/*.png'.format(save_dir), recursive=True) )
-    print("Done!")
-    
-    iteration = 0
-    list_processed_segments = []
-    num_segments = len(toolkit.list_training_segments())
-    
-    for segment in toolkit.list_training_segments(): # mi creo una lista di segmenti...
-        iteration = iteration + 1
-        num_segments = num_segments - 1
-        print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing |{}| ^^^^^^^^^^^^^^^^^^^^^^".format(segment[:-28]))
-        if num_segments != 0:
-            print("^^^^^^^^^^^^^^^^^^^^^^     {} segments left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_segments))
-        else:
-            print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
-        toolkit.assign_segment(segment)
+    if args.mode == "add":
+        iteration = 0
+        list_segments = toolkit.list_training_segments()
+        num_segments = len(list_segments)
         
-        process_segment()
-        #toolkit.save_video()
-        #toolkit.consolidate()
+        for segment in list_segments: # mi creo una lista di segmenti...
+            iteration = iteration + 1
+            num_segments = num_segments - 1
+            print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing |{}| ^^^^^^^^^^^^^^^^^^^^^^".format(segment[:-28]))
+            if num_segments != 0:
+                print("^^^^^^^^^^^^^^^^^^^^^^     {} segments left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_segments))
+            else:
+                print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
+            toolkit.assign_segment(segment)
+            
+            process_segment()
+            #toolkit.save_video()
+            #toolkit.consolidate()
+            
+            if iteration == 100: # for controlling how many segments we're going to process
+                break 
         
-        if iteration == 100: # for controlling how many segments we're going to process
-            break 
-    
-    print("################# Processing is Finished ;) #################")
-    print("Number of processed segments: {}".format(len(list_processed_segments)))
-    # COMMENT THIS PART IF NOT NEEDED
-    #print("removing the 'not anymore usefull' directories...")
-    #remove_directory(save_dir, list_processed_segments)
-    #print("Done!")
+        print("################# Processing is Finished ;) #################")
+        print("Number of processed segments: {}".format(num_segments))
+        
+    elif args.mode == "del": # abbiamo intenzione di eliminare la cartelle relative a questi segmenti
+        print("removing the indicated segments directories...")
+        print("[The ones saved in 'archived_files']")
+        list_saved_segments = os.listdir(save_dir)[1:]
+        list_to_delete_segments = toolkit.list_training_segments()
+        
+        for dir in list_to_delete_segments:
+            if dir in list_saved_segments:
+                try:
+                    shutil.rmtree(save_dir + "/" + dir)
+                except OSError as e:
+                    print("Error: %s : %s" % (dir, e.strerror))
+        print("Done!")
