@@ -116,9 +116,9 @@ class ToolKit:
             
         print("cleaning directory...")
         # clear images and labels from previous executions
-        clean_directory(glob.glob('{}/**/*.txt'.format(self.camera_dir), recursive=True))
-        clean_directory(glob.glob('{}/**/*.json'.format(self.camera_dir), recursive=True))
-        clean_directory(glob.glob('{}/**/*.png'.format(self.camera_dir), recursive=True))
+        self.clean_directory(glob.glob('{}/**/*.txt'.format(self.camera_dir), recursive=True))
+        self.clean_directory(glob.glob('{}/**/*.json'.format(self.camera_dir), recursive=True))
+        self.clean_directory(glob.glob('{}/**/*.png'.format(self.camera_dir), recursive=True))
         print("Done!")
         
         open("{}/last_file.txt".format(self.save_dir), 'w').write(self.segment)
