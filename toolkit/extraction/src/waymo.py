@@ -2,7 +2,6 @@ import os
 import glob
 import shutil
 import threading
-import WaymoOpenDataset
 from typing_extensions import dataclass_transform
 import numpy as np
 import json
