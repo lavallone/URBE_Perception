@@ -46,7 +46,7 @@ class WaymoToolKit:
             decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
             if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
                 cv2.imwrite("{}/{}_{}.png".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
-                l.append({"name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "name_video" : self.segment[:-28], "width" : frame.context.camera_calibrations.width, "height" : frame.context.camera_calibrations.height})
+                l.append({"name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "name_video" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
         self.update_json_image(l)
 
     # Extract Camera Label
