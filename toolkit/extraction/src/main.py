@@ -4,7 +4,7 @@ import waymo
 if __name__=="__main__":
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("dataset", type=str, default="waymo")
+    parser.add_argument("dataset", type=str)
     args = parser.parse_args()
     
     if args.dataset == "waymo":
@@ -15,5 +15,4 @@ if __name__=="__main__":
         toolkit = waymo.WaymoToolKit(tfrecord_dir=tfrecord_dir, images_dir=images_dir, labels_json=labels_json, image_or_label="image")
         toolkit.waymo_extraction()
     else:
-        print("porco")
         pass
