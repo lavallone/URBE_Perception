@@ -59,7 +59,7 @@ class BDD100KToolKit:
             if num_json_video != 0:
                 print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
             else:
-                print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
+                print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
             self.json_video = json_video
             
             t = threading.Thread(target=self.extract_labels)
