@@ -40,14 +40,18 @@ class WaymoToolKit:
     
     # Extract Camera Image
     def extract_image(self, ndx, frame):
-        l = []
-        for data in frame.images:
-            decodedImage = tf.io.decode_jpeg(data.image, channels=3, dct_method='INTEGER_ACCURATE')
-            decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
-            if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                cv2.imwrite("{}/{}_{}.png".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
-                l.append({"name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "name_video" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
-        self.update_json_image(l)
+        if self.image_or_label == "image":
+            for data in frame.images:
+                decodedImage = tf.io.decode_jpeg(data.image, channels=3, dct_method='INTEGER_ACCURATE')
+                decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
+                if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
+                    cv2.imwrite("{}/{}_{}.png".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
+        elif self.image_or_label == "label":
+            l = []
+            for data in frame.images:
+                if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
+                    l.append({"name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "name_video" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
+            self.update_json_image(l)
 
     # Extract Camera Label
     def extract_labels(self, ndx, frame): # ogni volta devo aggiungere una label
@@ -91,9 +95,8 @@ class WaymoToolKit:
             frame.ParseFromString(datasetAsList[frameIdx])
             if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
                 self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day, frame.context.stats.weather)
-            if self.image_or_label == "image":
-                self.extract_image(frameIdx, frame)
-            elif self.image_or_label == "label":
+            self.extract_image(frameIdx, frame)
+            if self.image_or_label == "label":
                 self.extract_labels(frameIdx, frame)
 
     # Function to call to extract images
