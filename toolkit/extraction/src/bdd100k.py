@@ -16,7 +16,7 @@ class BDD100KToolKit:
         
     def list_json_videos(self):
         l = []
-        for file in os.listdir(self.labels_dir):
+        for file in os.listdir(self.labels_dir+"/"+self.labels_dir):
             if file.endswith(".json"):
                 l.append(file)
         return l
