@@ -50,7 +50,8 @@ class WaymoToolKit:
             l = []
             for data in frame.images:
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                    l.append({"name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "name_video" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
+                    id = self.segment[:-28]+str(ndx)+"_"+self.camera_list[data.name]
+                    l.append({"id" : id, "name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "video_id" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
             self.update_json_image(l)
 
     # Extract Camera Label
@@ -73,15 +74,15 @@ class WaymoToolKit:
                             x = x - 0.5 * length
                             y = y - 0.5 * width
                             if label["type"] == "TYPE_VEHICLE":
-                                cat = "car"
+                                cat_id = 0
                             elif label["type"] == "TYPE_PEDESTRIAN":
-                                cat = "pedestrian"
+                                cat_id = 1
                             else:
-                                cat = "bicycle"
+                                cat_id = 2
                             id = label["id"]
                             bbox = [x, y, length, width]
-                            name_image = str(ndx)+"_"+camera_name+".png"
-                            l.append({"id" : id, "name_image" : name_image, "bbox" :  bbox, "category" : cat})
+                            name_image = self.segment[:-28]+str(ndx)+"_"+camera_name
+                            l.append({"id" : id, "image_id" : name_image, "category_id" : cat_id, "bbox" :  bbox})
         self.update_json_annotation(l)
                
     
@@ -176,7 +177,7 @@ class WaymoToolKit:
                 
     def update_json_video(self, name, num_frames, time_of_day, weather):
         d = self.json_dictionary
-        d["videos"].append({"name" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })
+        d["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })
         self.json_dictionary = d
         
     def update_json_image(self, list):
