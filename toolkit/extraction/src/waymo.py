@@ -54,7 +54,6 @@ class WaymoToolKit:
         l=[]
         for data in frame.camera_labels:
             camera = MessageToDict(data) # converte dal .proto file
-            print(camera)
             camera_name = camera["name"]
             if "labels" in camera.keys() and (camera_name=="FRONT" or  camera_name=="FRONT_LEFT" or camera_name=="FRONT_RIGHT"):
                 labels = camera["labels"]
