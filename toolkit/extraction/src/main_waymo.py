@@ -19,8 +19,8 @@ def process_segment():
 if __name__=="__main__":
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", type=str, default="add")
-    args = parser.parse_args()
+    #parser.add_argument("mode", type=str, default="add")
+    #args = parser.parse_args()
     
     #### COLAB ####
     training_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/archived_files" # provide directory where .tfrecords are stored
