@@ -54,6 +54,7 @@ class WaymoToolKit:
         l=[]
         for data in frame.camera_labels:
             camera = MessageToDict(data) # converte dal .proto file
+            print(camera)
             camera_name = camera["name"]
             labels = camera["labels"]
             if camera_name=="FRONT" or  camera_name=="FRONT_LEFT" or camera_name=="FRONT_RIGHT":
@@ -99,16 +100,15 @@ class WaymoToolKit:
 
     # Function to call to extract images
     def extract_camera_images(self): # we're processing only one segment
-        
-        self.images_seg_dir = self.images_dir + "/" + self.segment[:-28]
-        
-        if not os.path.exists(self.images_seg_dir):
-            os.makedirs(self.images_seg_dir)
-            
-        print("cleaning directory from previous images...")
-        # clear images from previous executions
-        self.clean_directory(glob.glob('{}/**/*.png'.format(self.images_seg_dir), recursive=True))
-        print("Done!")
+
+        if self.image_or_label == "image":
+            self.images_seg_dir = self.images_dir + "/" + self.segment[:-28]
+            if not os.path.exists(self.images_seg_dir):
+                os.makedirs(self.images_seg_dir)
+            print("cleaning directory from previous images...")
+            # clear images from previous executions
+            self.clean_directory(glob.glob('{}/**/*.png'.format(self.images_seg_dir), recursive=True))
+            print("Done!")
 
         # Convert tfrecord to a list
         datasetAsList = list(self.dataset.as_numpy_iterator()) # lista dei frame relativi a un 'segment'
