@@ -23,8 +23,8 @@ if __name__=="__main__":
     #args = parser.parse_args()
     
     #### COLAB ####
-    training_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/archived_files" # provide directory where .tfrecords are stored
-    save_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/training/individual_files" # provide a directory where data should be extracted to
+    training_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/train/prova" # provide directory where .tfrecords are stored
+    save_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/train/videos" # provide a directory where data should be extracted to
     
     toolkit = WaymoOpenDataset.ToolKit(training_dir=training_dir, save_dir=save_dir)
     
