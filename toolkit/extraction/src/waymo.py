@@ -59,22 +59,23 @@ class WaymoToolKit:
                 labels = camera["labels"]
                 for label in labels: # iteriamo sulle labels di una singola immagine
                     if label["type"] == "TYPE_VEHICLE" or label["type"] == "TYPE_PEDESTRIAN" or label["type"] == "TYPE_CYCLIST":
-                        x = label["box"]["centerX"]
-                        y = label["box"]["centerY"]
-                        width = label["box"]["width"]
-                        length = label["box"]["length"]
-                        x = x - 0.5 * length
-                        y = y - 0.5 * width
-                        if label["type"] == "TYPE_VEHICLE":
-                            cat = "car"
-                        elif label["type"] == "TYPE_PEDESTRIAN":
-                            cat = "pedestrian"
-                        else:
-                            cat = "bicycle"
-                        id = label["id"]
-                        bbox = [x, y, length, width]
-                        name_image = ndx + "_" + camera_name + ".png"
-                        l.append({"id" : id, "name_image" : name_image, "bbox" :  bbox, "category" : cat})
+                        if label["detection_difficulty_level"] == "LEVEL_2" or label["tracking_difficulty_level"] == "LEVEL_2": # vado a filtrare anche gli oggetti più difficili da identificare
+                            x = label["box"]["centerX"]
+                            y = label["box"]["centerY"]
+                            width = label["box"]["width"]
+                            length = label["box"]["length"]
+                            x = x - 0.5 * length
+                            y = y - 0.5 * width
+                            if label["type"] == "TYPE_VEHICLE":
+                                cat = "car"
+                            elif label["type"] == "TYPE_PEDESTRIAN":
+                                cat = "pedestrian"
+                            else:
+                                cat = "bicycle"
+                            id = label["id"]
+                            bbox = [x, y, length, width]
+                            name_image = ndx + "_" + camera_name + ".png"
+                            l.append({"id" : id, "name_image" : name_image, "bbox" :  bbox, "category" : cat})
         self.update_json_annotation(l)
                
     
@@ -149,6 +150,10 @@ class WaymoToolKit:
             
         print("################# Processing is Finished ;) #################")
         print("Number of processed segments: {}".format(iteration))
+        print("loading the new label_json file...")
+        f = open(self.labels_json, "w")
+        json.dump(self.json_dictionary, f) 
+        print("Done!")
             
     ######## Util Functions ########
 
