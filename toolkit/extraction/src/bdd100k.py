@@ -16,14 +16,14 @@ class BDD100KToolKit:
         
     def list_json_videos(self):
         l = []
-        for file in os.listdir(self.labels_dir+"/"+self.labels_dir):
+        for file in os.listdir(self.labels_dir):
             if file.endswith(".json"):
                 l.append(file)
         return l
         
     def extract_labels(self):
         
-        d = json.load(open(self.json_video))
+        d = json.load(open(self.labels_dir+"/"+self.json_video))
         name_video = d[0]["videoName"]
         totalFrames = d[-1]["frameIndex"] + 1
         self.update_json_video(name_video, totalFrames)
