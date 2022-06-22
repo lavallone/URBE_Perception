@@ -87,7 +87,7 @@ class WaymoToolKit:
             print("*************** processing frame {} ***************".format(frameIdx))
             frame.ParseFromString(datasetAsList[frameIdx])
             if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
-                self.update_json_video(self.segment[:-28], totalFrames, frame.context.time_of_day, frame.context.weather)
+                self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day, frame.context.stats.weather)
             if self.image_or_label == "image":
                 self.extract_image(frameIdx, frame)
             elif self.image_or_label == "label":
