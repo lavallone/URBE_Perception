@@ -89,7 +89,7 @@ class BDD100KToolKit:
         
         threads = []
         for i in self.batch(range(num_json_video), 30): # ogni thread si occupa di 30 frame alla volta
-            t = threading.Thread(target=self.exract_labels, args=[list_json_videos, i])
+            t = threading.Thread(target=self.extract_labels, args=[list_json_videos, i])
             t.start()
             threads.append(t)
         
