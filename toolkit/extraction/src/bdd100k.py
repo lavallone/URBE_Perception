@@ -7,7 +7,7 @@ tf.enable_eager_execution()
 class BDD100KToolKit:
     def __init__(self, labels_json=None, labels_dir=None):
 
-        self.json_video = None
+        #self.json_video = None
         
         self.labels_dir = labels_dir
         self.labels_json = labels_json
@@ -21,47 +21,52 @@ class BDD100KToolKit:
                 l.append(file)
         return l
         
-    def extract_labels(self):
+    def extract_labels(self, list_json_videos, range_value):
         
-        d = json.load(open(self.labels_dir+"/"+self.json_video))
-        name_video = d[0]["videoName"]
-        totalFrames = d[-1]["frameIndex"] + 1
-        self.update_json_video(name_video, totalFrames)
+        for videoIdx in range_value:
+            
+            json_video = list_json_videos[videoIdx]
+            print("*************** processing json video file {} ***************".format(json_video))
+        
+            d = json.load(open(self.labels_dir+"/"+json_video))
+            name_video = d[0]["videoName"]
+            totalFrames = d[-1]["frameIndex"] + 1
+            self.update_json_video(name_video, totalFrames)
 
-        list_image = []
-        for image_dict in d:
-            name_image = image_dict["name"]
-            id_image = name_video + name_image[:-5]
-            width = 1280
-            height = 720
-            list_image.append({"id" : id_image, "name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
-            list_labels = []
-            for label in image_dict["labels"]:
-                if label["category"] == "car" or label["category"] == "pedestrian" or label["category"] == "bycicle":
-                    if label["attributes"]["occluded"] == False and label["attributes"]["truncated"] == False:
-                        id = label["id"]
-                        # Ipotizzando che (x1,y1) è l'angolo sx di sopra e (x2,y2) quello dx di sotto...
-                        x1 = label["box2d"]["x1"]
-                        y1 = label["box2d"]["y1"]
-                        x2 = label["box2d"]["x2"]
-                        y2 = label["box2d"]["y2"]
-                        w = x2-x1
-                        h = y1-y2
-                        bbox = [x1, x2, w, h]
-                        if label["category"] == "car":
-                            cat_id = 0
-                        elif label["category"] == "pedestrian":
-                            cat_id = 1
-                        else:
-                            cat_id = 2
-                        list_labels.append({"id" : id, "image_id" : id_image, "category_id" : cat_id, "bbox" :  bbox})
-            self.update_json_annotation(list_labels)
-        self.update_json_image(list_image)
+            list_image = []
+            for image_dict in d:
+                name_image = image_dict["name"]
+                id_image = name_video + name_image[:-5]
+                width = 1280
+                height = 720
+                list_image.append({"id" : id_image, "name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
+                list_labels = []
+                for label in image_dict["labels"]:
+                    if label["category"] == "car" or label["category"] == "pedestrian" or label["category"] == "bycicle":
+                        if label["attributes"]["occluded"] == False and label["attributes"]["truncated"] == False:
+                            id = label["id"]
+                            # Ipotizzando che (x1,y1) è l'angolo sx di sopra e (x2,y2) quello dx di sotto...
+                            x1 = label["box2d"]["x1"]
+                            y1 = label["box2d"]["y1"]
+                            x2 = label["box2d"]["x2"]
+                            y2 = label["box2d"]["y2"]
+                            w = x2-x1
+                            h = y1-y2
+                            bbox = [x1, x2, w, h]
+                            if label["category"] == "car":
+                                cat_id = 0
+                            elif label["category"] == "pedestrian":
+                                cat_id = 1
+                            else:
+                                cat_id = 2
+                            list_labels.append({"id" : id, "image_id" : id_image, "category_id" : cat_id, "bbox" :  bbox})
+                self.update_json_annotation(list_labels)
+            self.update_json_image(list_image)
            
         
     def bdd100k_extraction(self): # potrei provare a implementare un multi-threading (1 thread per 5 video)
         
-        iteration = 0
+        #iteration = 0
         list_json_videos = self.list_json_videos()
         num_json_video = len(list_json_videos)
             
@@ -84,7 +89,7 @@ class BDD100KToolKit:
         
         threads = []
         for i in self.batch(range(num_json_video), 30): # ogni thread si occupa di 30 frame alla volta
-            t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i, totalFrames])
+            t = threading.Thread(target=self.exract_labels, args=[list_json_videos, i])
             t.start()
             threads.append(t)
         
@@ -92,12 +97,16 @@ class BDD100KToolKit:
             thread.join()
             
         print("################# Processing is Finished ;) #################")
-        print("Number of processed json files: {}".format(iteration))
+        print("Number of processed json files: {}".format(num_json_video))
         print("loading the new label_json file...")
         f = open(self.labels_json, "w")
         json.dump(self.json_dictionary, f) 
         print("Done!")
         
+    def batch(self, iterable, n=1):
+        l = len(iterable)
+        for ndx in range(0, l, n):
+            yield iterable[ndx:min(ndx + n, l)]        
             
     def update_json_video(self, name, num_frames, time_of_day=None, weather=None):
         d = self.json_dictionary
