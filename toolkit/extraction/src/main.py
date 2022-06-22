@@ -15,4 +15,5 @@ if __name__=="main":
         toolkit = waymo.WaymoToolKit(tfrecord_dir=tfrecord_dir, images_dir=images_dir, labels_json=labels_json, image_or_label="image")
         toolkit.waymo_extraction()
     else:
+        print("porco")
         pass
