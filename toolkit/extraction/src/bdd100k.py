@@ -41,10 +41,10 @@ class BDD100KToolKit:
                     if label["attributes"]["occluded"] == False and label["attributes"]["truncated"] == False:
                         id = label["id"]
                         # Ipotizzando che (x1,y1) è l'angolo sx di sopra e (x2,y2) quello dx di sotto...
-                        x1 = label["bbox"]["x1"]
-                        y1 = label["bbox"]["y1"]
-                        x2 = label["bbox"]["x2"]
-                        y2 = label["bbox"]["y2"]
+                        x1 = label["box2d"]["x1"]
+                        y1 = label["box2d"]["y1"]
+                        x2 = label["box2d"]["x2"]
+                        y2 = label["box2d"]["y2"]
                         w = x2-x1
                         h = y1-y2
                         bbox = [x1, x2, w, h]
