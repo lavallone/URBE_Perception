@@ -57,6 +57,7 @@ class WaymoToolKit:
             camera_name = camera["name"]
             if camera_name=="FRONT" or  camera_name=="FRONT_LEFT" or camera_name=="FRONT_RIGHT":
                 labels = camera["labels"]
+                print(labels)
                 for label in labels: # iteriamo sulle labels di una singola immagine
                     if label["type"] == "TYPE_VEHICLE" or label["type"] == "TYPE_PEDESTRIAN" or label["type"] == "TYPE_CYCLIST":
                         if "detectionDifficultyLevel" in label.keys() and (label["detectionDifficultyLevel"] == "LEVEL_2" or label["trackingDifficultyLevel"] == "LEVEL_2"): # vado a filtrare anche gli oggetti più difficili da identificare
