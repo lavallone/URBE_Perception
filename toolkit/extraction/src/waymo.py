@@ -13,7 +13,7 @@ from waymo_open_dataset.utils import  frame_utils
 from waymo_open_dataset import dataset_pb2 as open_dataset
 
 class WaymoToolKit:
-    def __init__(self, tfrecord_dir=None,  images_dir=None, labels_json=None, image_or_label="label"):
+    def __init__(self, tfrecord_dir=None,  images_dir=None, labels_json=None, image_or_label=None):
 
         self.segment = None
         
@@ -150,10 +150,11 @@ class WaymoToolKit:
             
         print("################# Processing is Finished ;) #################")
         print("Number of processed segments: {}".format(iteration))
-        print("loading the new label_json file...")
-        f = open(self.labels_json, "w")
-        json.dump(self.json_dictionary, f) 
-        print("Done!")
+        if self.image_or_label == "label":
+            print("loading the new label_json file...")
+            f = open(self.labels_json, "w")
+            json.dump(self.json_dictionary, f) 
+            print("Done!")
             
     ######## Util Functions ########
 
