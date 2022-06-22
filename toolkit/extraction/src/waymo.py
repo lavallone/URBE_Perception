@@ -58,7 +58,6 @@ class WaymoToolKit:
             if camera_name=="FRONT" or  camera_name=="FRONT_LEFT" or camera_name=="FRONT_RIGHT":
                 labels = camera["labels"]
                 for label in labels: # iteriamo sulle labels di una singola immagine
-                    print(label)
                     if label["type"] == "TYPE_VEHICLE" or label["type"] == "TYPE_PEDESTRIAN" or label["type"] == "TYPE_CYCLIST":
                         if "detectionDifficultyLevel" in label.keys() and (label["detectionDifficultyLevel"] == "LEVEL_2" or label["trackingDifficultyLevel"] == "LEVEL_2"): # vado a filtrare anche gli oggetti più difficili da identificare
                             continue
@@ -77,7 +76,7 @@ class WaymoToolKit:
                                 cat = "bicycle"
                             id = label["id"]
                             bbox = [x, y, length, width]
-                            name_image = ndx + "_" + camera_name + ".png"
+                            name_image = str(ndx)+"_"+camera_name+".png"
                             l.append({"id" : id, "name_image" : name_image, "bbox" :  bbox, "category" : cat})
         self.update_json_annotation(l)
                
