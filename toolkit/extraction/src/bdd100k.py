@@ -31,17 +31,30 @@ class BDD100KToolKit:
         list_image = []
         for image_dict in d:
             name_image = image_dict["name"]
+            id_image = name_video + name_image[:-5]
             width = 1280
             height = 720
-            list_image.append({"name" : name_image, "name_video" : name_video, "width" : width, "height" : height})
+            list_image.append({"id" : id_image, "name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
             list_labels = []
             for label in image_dict["labels"]:
                 if label["category"] == "car" or label["category"] == "pedestrian" or label["category"] == "bycicle":
                     if label["attributes"]["occluded"] == False and label["attributes"]["truncated"] == False:
                         id = label["id"]
-                        bbox = [label["bbox"]["x1"], label["bbox"]["x2"], label["bbox"]["xy"], label["bbox"]["y2"]]
-                        cat = label["category"]
-                        list_labels.append({"id" : id, "name_image" : name_image, "bbox" :  bbox, "category" : cat})
+                        # Ipotizzando che (x1,y1) è l'angolo sx di sopra e (x2,y2) quello dx di sotto...
+                        x1 = label["bbox"]["x1"]
+                        y1 = label["bbox"]["y1"]
+                        x2 = label["bbox"]["x2"]
+                        y2 = label["bbox"]["y2"]
+                        w = x2-x1
+                        h = y1-y2
+                        bbox = [x1, x2, w, h]
+                        if label["category"] == "car":
+                            cat_id = 0
+                        elif label["category"] == "pedestrian":
+                            cat_id = 1
+                        else:
+                            cat_id = 2
+                        list_labels.append({"id" : id, "image_id" : id_image, "category_id" : cat_id, "bbox" :  bbox})
             self.update_json_annotation(list_labels)
         self.update_json_image(list_image)
            
@@ -79,7 +92,7 @@ class BDD100KToolKit:
             
     def update_json_video(self, name, num_frames, time_of_day=None, weather=None):
         d = self.json_dictionary
-        d["videos"].append({"name" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })
+        d["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })
         self.json_dictionary = d
         
     def update_json_image(self, list):
