@@ -12,11 +12,12 @@ def clean_json(coco, d, lookup_video):
         img.pop("sid",None)
         img.pop("fid",None)
     d["images"] = coco.dataset["images"]
+    ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False
     for ann in coco.dataset["annotations"]:
         ann.pop("area",None)
         ann.pop("ignore",None)
         ann.pop("track",None)
-    ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False 
+        ann.pop("iscrowd",None)
     d["annotations"] = coco.loadAnns(ann_ids)
 
 if __name__=="__main__":
@@ -58,7 +59,11 @@ if __name__=="__main__":
                 totalFrames = totalFrames + 1
             d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None, "weather" : None })
         # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
+        print("cleaning 'old_train.json'...") 
         clean_json(coco, d, lookup_video)
-        json.dump(d, open(labels_json, "w")) 
+        print("Done!")
+        print("copying to 'train.json'...")
+        json.dump(d, open(labels_json, "w"))
+        print("Done!")
     else:
         pass

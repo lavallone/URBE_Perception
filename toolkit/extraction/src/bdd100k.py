@@ -59,28 +59,37 @@ class BDD100KToolKit:
         self.update_json_image(list_image)
            
         
-    def bdd100k_extraction(self):
+    def bdd100k_extraction(self): # potrei provare a implementare un multi-threading (1 thread per 5 video)
         
         iteration = 0
         list_json_videos = self.list_json_videos()
         num_json_video = len(list_json_videos)
             
-        for json_video in list_json_videos:
-            iteration = iteration + 1
-            num_json_video = num_json_video - 1
-            print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
-            if num_json_video != 0:
-                print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
-            else:
-                print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
-            self.json_video = json_video
+        # for json_video in list_json_videos:
+        #     iteration = iteration + 1
+        #     num_json_video = num_json_video - 1
+        #     print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
+        #     if num_json_video != 0:
+        #         print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
+        #     else:
+        #         print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
+        #     self.json_video = json_video
             
-            t = threading.Thread(target=self.extract_labels)
-            t.start()
-            t.join()
+        #     t = threading.Thread(target=self.extract_labels)
+        #     t.start()
+        #     t.join()
                 
-            if iteration == 10000: # for controlling how many segments we're going to process
-                break 
+        #     if iteration == 10000: # for controlling how many segments we're going to process
+        #         break 
+        
+        threads = []
+        for i in self.batch(range(num_json_video), 30): # ogni thread si occupa di 30 frame alla volta
+            t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i, totalFrames])
+            t.start()
+            threads.append(t)
+        
+        for thread in threads:
+            thread.join()
             
         print("################# Processing is Finished ;) #################")
         print("Number of processed json files: {}".format(iteration))
