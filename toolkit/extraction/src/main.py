@@ -1,9 +1,23 @@
 import argparse
+import os
+import json
 import waymo
 import bdd100k
+from pycocotools.coco import COCO
 
-def clean_json(json_file):
-    pass
+def clean_json(coco, d, lookup_video):
+    d["categories"] = coco.loadCats([0,1,2])
+    for img in coco.dataset["images"]:
+        img["video_id"] = lookup_video[img["sid"]]
+        img.pop("sid",None)
+        img.pop("fid",None)
+    d["images"] = coco.dataset["images"]
+    for ann in coco.dataset["annotations"]:
+        ann.pop("area",None)
+        ann.pop("ignore",None)
+        ann.pop("track",None)
+    ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False 
+    d["annotations"] = coco.loadAnns(ann_ids)
 
 if __name__=="__main__":
     
@@ -27,7 +41,22 @@ if __name__=="__main__":
         toolkit.bdd100k_extraction()
         
     elif args.dataset == "argoverse": # since the labels are COCO-like, we just need to clean the already existed json file!
+        images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/argoverse/images/train/videos"
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/argoverse/labels/train/train.json"
-        clean_json(labels_json)
+        
+        d = {}
+        coco = COCO(labels_json)
+        list_videos = coco["sequences"] 
+        d["videos"] = []
+        lookup_video = {}
+        for i, name_video in enumerate(list_videos):
+            lookup_video[i] = name_video
+            totalFrames = 0
+            for f in os.listdir(images_dir+"/"+name_video):
+                totalFrames = totalFrames + 1
+            d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None, "weather" : None })
+        # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
+        clean_json(coco, d, lookup_video)
+        json.dump(d, open(labels_json, "w")) 
     else:
         pass

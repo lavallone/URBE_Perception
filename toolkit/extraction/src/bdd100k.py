@@ -68,7 +68,7 @@ class BDD100KToolKit:
         for json_video in list_json_videos:
             iteration = iteration + 1
             num_json_video = num_json_video - 1
-            print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing |{}| ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
+            print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
             if num_json_video != 0:
                 print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
             else:
@@ -83,7 +83,7 @@ class BDD100KToolKit:
                 break 
             
         print("################# Processing is Finished ;) #################")
-        print("Number of processed json filess: {}".format(iteration))
+        print("Number of processed json files: {}".format(iteration))
         print("loading the new label_json file...")
         f = open(self.labels_json, "w")
         json.dump(self.json_dictionary, f) 
