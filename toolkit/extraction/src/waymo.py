@@ -9,7 +9,7 @@ tf.enable_eager_execution()
 
 from google.protobuf.json_format import MessageToDict # utile per manipolare i proto buffers
 
-from waymo_open_dataset.utils import  frame_utils
+from waymo_open_dataset.utils import frame_utils
 from waymo_open_dataset import dataset_pb2 as open_dataset
 
 class WaymoToolKit:

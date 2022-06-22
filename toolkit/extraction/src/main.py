@@ -41,9 +41,9 @@ if __name__=="__main__":
         toolkit.bdd100k_extraction()
         
     elif args.dataset == "argoverse": # since the labels are COCO-like, we just need to clean the already existed json file!
-        images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/argoverse/images/train/videos"
-        old_labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/argoverse/labels/train/old_train.json"
-        labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/argoverse/labels/train/train.json"
+        images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/train/videos"
+        old_labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/train/old_train.json"
+        labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/train/train.json"
 
         
         d = {}
