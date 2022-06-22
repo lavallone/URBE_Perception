@@ -48,7 +48,7 @@ if __name__=="__main__":
         
         d = {}
         coco = COCO(old_labels_json)
-        list_videos = coco.datset["sequences"] 
+        list_videos = coco.dataset["sequences"] 
         d["videos"] = []
         lookup_video = {}
         for i, name_video in enumerate(list_videos):
