@@ -97,8 +97,8 @@ class BDD100KToolKit:
         print("################# Processing is Finished ;) #################")
         print("Number of processed json files: {}".format(num_json_video))
         print("loading the new label_json file...")
-        #f = open(self.labels_json, "w")
-        #json.dump(self.json_dictionary, f) 
+        f = open(self.labels_json, "w")
+        json.dump(self.json_dictionary, f) 
         print("Done!")
         
     def batch(self, iterable, n=1):
@@ -108,12 +108,9 @@ class BDD100KToolKit:
             
     def update_json_video(self, name, num_frames, time_of_day=None, weather=None):
         self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })
-        json.dump(self.json_dictionary, open(self.labels_json, "w"))
         
     def update_json_image(self, list):
         self.json_dictionary["images"] = self.json_dictionary["images"] + list
-        json.dump(self.json_dictionary, open(self.labels_json, "w"))
         
     def update_json_annotation(self, list):
         self.json_dictionary["annotations"] = self.json_dictionary["annotations"] + list
-        json.dump(self.json_dictionary, open(self.labels_json, "w"))
