@@ -21,12 +21,12 @@ class BDD100KToolKit:
                 l.append(file)
         return l
         
-    def extract_labels(self, list_json_videos, range_value):
+    def extract_labels(self, json_video):#, list_json_videos, range_value):
         
-        for videoIdx in range_value:
+        #for videoIdx in range_value:
             
-            json_video = list_json_videos[videoIdx]
-            print("*************** processing json video file {} ***************".format(json_video))
+            #json_video = list_json_videos[videoIdx]
+            #print("*************** processing json video file {} ***************".format(json_video))
         
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
@@ -66,35 +66,35 @@ class BDD100KToolKit:
         
     def bdd100k_extraction(self): # provo a implementarlo col multi-threading
         
-        #iteration = 0
+        iteration = 0
         list_json_videos = self.list_json_videos()
         num_json_video = len(list_json_videos)
             
-        # for json_video in list_json_videos:
-        #     iteration = iteration + 1
-        #     num_json_video = num_json_video - 1
-        #     print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
-        #     if num_json_video != 0:
-        #         print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
-        #     else:
-        #         print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
-        #     self.json_video = json_video
+        for json_video in list_json_videos:
+            iteration = iteration + 1
+            num_json_video = num_json_video - 1
+            print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
+            if num_json_video != 0:
+                print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
+            else:
+                print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
+            #self.json_video = json_video
             
-        #     t = threading.Thread(target=self.extract_labels)
-        #     t.start()
-        #     t.join()
-                
-        #     if iteration == 10000: # for controlling how many segments we're going to process
-        #         break 
-        
-        threads = []
-        for i in self.batch(range(num_json_video), 10):
-            t = threading.Thread(target=self.extract_labels, args=[list_json_videos, i])
+            t = threading.Thread(target=self.extract_labels, args=[json_video])
             t.start()
-            threads.append(t)
+            t.join()
+                
+            if iteration == 10000: # for controlling how many segments we're going to process
+                break 
         
-        for thread in threads:
-            thread.join()
+        # threads = []
+        # for i in self.batch(range(num_json_video), 10):
+        #     t = threading.Thread(target=self.extract_labels, args=[list_json_videos, i])
+        #     t.start()
+        #     threads.append(t)
+        
+        # for thread in threads:
+        #     thread.join()
             
         print("################# Processing is Finished ;) #################")
         print("Number of processed json files: {}".format(num_json_video))
