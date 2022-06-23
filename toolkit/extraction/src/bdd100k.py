@@ -82,7 +82,7 @@ class BDD100KToolKit:
             t.start()
             t.join()
                 
-            if iteration == 1200:
+            if iteration == 1200: # because we just download it 1200 "video clips" (not 1400)
                 break
         
         # threads = []
