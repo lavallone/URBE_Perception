@@ -34,7 +34,7 @@ class BDD100KToolKit:
             list_image = []
             for image_dict in d:
                 name_image = image_dict["name"]
-                id_image = name_video + name_image[:-5]
+                id_image = name_video + name_image[:-4]
                 width = 1280
                 height = 720
                 list_image.append({"id" : id_image, "name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
@@ -82,7 +82,7 @@ class BDD100KToolKit:
             t.start()
             t.join()
                 
-            if iteration == 1200: # because we just download it 1200 "video clips" (not 1400)
+            if iteration == 10000:
                 break
         
         # threads = []
