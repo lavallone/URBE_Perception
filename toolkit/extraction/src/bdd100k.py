@@ -19,12 +19,7 @@ class BDD100KToolKit:
                 l.append(file)
         return l
         
-    def extract_labels(self, json_video):#, list_json_videos, range_value):
-        
-        #for videoIdx in range_value:
-            
-            #json_video = list_json_videos[videoIdx]
-            #print("*************** processing json video file {} ***************".format(json_video))
+    def extract_labels(self, json_video):
         
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
@@ -84,15 +79,6 @@ class BDD100KToolKit:
                 
             if iteration == 10000:
                 break
-        
-        # threads = []
-        # for i in self.batch(range(num_json_video), 10):
-        #     t = threading.Thread(target=self.extract_labels, args=[list_json_videos, i])
-        #     t.start()
-        #     threads.append(t)
-        
-        # for thread in threads:
-        #     thread.join()
             
         print("################# Processing is Finished ;) #################")
         print("Number of processed json files: {}".format(iteration))
