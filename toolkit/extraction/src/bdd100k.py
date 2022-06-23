@@ -1,8 +1,8 @@
 import os
 import threading
 import json
-import tensorflow.compat.v1 as tf
-tf.enable_eager_execution()
+#import tensorflow.compat.v1 as tf
+#tf.enable_eager_execution()
 
 class BDD100KToolKit:
     def __init__(self, labels_json=None, labels_dir=None):
@@ -88,7 +88,7 @@ class BDD100KToolKit:
         #         break 
         
         threads = []
-        for i in self.batch(range(num_json_video), 30): # ogni thread si occupa di 30 frame alla volta
+        for i in self.batch(range(num_json_video), 10):
             t = threading.Thread(target=self.extract_labels, args=[list_json_videos, i])
             t.start()
             threads.append(t)
