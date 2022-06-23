@@ -82,8 +82,8 @@ class BDD100KToolKit:
             t.start()
             t.join()
                 
-            if iteration == 10000: # for controlling how many segments we're going to process
-                break 
+            if iteration == 1200:
+                break
         
         # threads = []
         # for i in self.batch(range(num_json_video), 10):
@@ -95,7 +95,7 @@ class BDD100KToolKit:
         #     thread.join()
             
         print("################# Processing is Finished ;) #################")
-        print("Number of processed json files: {}".format(num_json_video))
+        print("Number of processed json files: {}".format(iteration))
         print("loading the new label_json file...")
         f = open(self.labels_json, "w")
         json.dump(self.json_dictionary, f) 

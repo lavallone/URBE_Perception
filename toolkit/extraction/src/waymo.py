@@ -14,7 +14,7 @@ from waymo_open_dataset import dataset_pb2 as open_dataset
 
 class WaymoToolKit:
     def __init__(self, tfrecord_dir=None,  images_dir=None, labels_json=None, image_or_label=None):
-        
+        self.counter = 0
         self.segment = None
         
         self.tfrecord_dir = tfrecord_dir
@@ -52,6 +52,7 @@ class WaymoToolKit:
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
                     id = self.segment[:-28]+str(ndx)+"_"+self.camera_list[data.name]
                     l.append({"id" : id, "name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "video_id" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
+                    self.counter = self.counter + 1
             self.update_json_image(l)
 
     # Extract Camera Label
@@ -86,19 +87,19 @@ class WaymoToolKit:
         self.update_json_annotation(l)
                
     
-    # Implemented Extraction as Threads
-    def camera_image_extraction_thread(self, datasetAsList, range_value, totalFrames):
+    # # Implemented Extraction as Threads
+    # def camera_image_extraction_thread(self, datasetAsList, range_value, totalFrames):
         
-        frame = open_dataset.Frame() # estraggo il Frame
+    #     frame = open_dataset.Frame() # estraggo il Frame
         
-        for frameIdx in range_value:
-            print("*************** processing frame {} ***************".format(frameIdx))
-            frame.ParseFromString(datasetAsList[frameIdx])
-            if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
-                self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day, frame.context.stats.weather)
-            self.extract_image(frameIdx, frame)
-            if self.image_or_label == "label":
-                self.extract_labels(frameIdx, frame)
+    #     for frameIdx in range_value:
+    #         print("*************** processing frame {} ***************".format(frameIdx))
+    #         frame.ParseFromString(datasetAsList[frameIdx])
+    #         if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
+    #             self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day, frame.context.stats.weather)
+    #         self.extract_image(frameIdx, frame)
+    #         if self.image_or_label == "label":
+    #             self.extract_labels(frameIdx, frame)
 
     # Function to call to extract images
     def extract_camera_images(self): # we're processing only one segment
@@ -116,14 +117,25 @@ class WaymoToolKit:
         datasetAsList = list(self.dataset.as_numpy_iterator()) # lista dei frame relativi a un 'segment'
         totalFrames = len(datasetAsList)
 
-        threads = []
-        for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
-            t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i, totalFrames])
-            t.start()
-            threads.append(t)
+        frame = open_dataset.Frame() # estraggo il Frame
         
-        for thread in threads:
-            thread.join()
+        for frameIdx in range(0, totalFrames):
+            print("*************** processing frame {} ***************".format(frameIdx))
+            frame.ParseFromString(datasetAsList[frameIdx])
+            if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
+                self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day, frame.context.stats.weather)
+            self.extract_image(frameIdx, frame)
+            if self.image_or_label == "label":
+                self.extract_labels(frameIdx, frame)
+        
+        # threads = []
+        # for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
+        #     t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i, totalFrames])
+        #     t.start()
+        #     threads.append(t)
+        
+        # for thread in threads:
+        #     thread.join()
 
     def waymo_extraction(self):
         
@@ -160,6 +172,7 @@ class WaymoToolKit:
             f = open(self.labels_json, "w")
             json.dump(self.json_dictionary, f) 
             print("Done!")
+            print(self.counter)
             
     ######## Util Functions ########
 
