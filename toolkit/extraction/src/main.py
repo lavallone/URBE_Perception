@@ -35,7 +35,7 @@ if __name__=="__main__":
         toolkit.waymo_extraction()
         
     elif args.dataset == "bdd100k":
-        labels_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/train"
+        labels_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/train/old_json"
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/train/train.json"
         
         toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json)

@@ -64,7 +64,7 @@ class BDD100KToolKit:
             self.update_json_image(list_image)
            
         
-    def bdd100k_extraction(self): # potrei provare a implementare un multi-threading (1 thread per 5 video)
+    def bdd100k_extraction(self): # provo a implementarlo col multi-threading
         
         #iteration = 0
         list_json_videos = self.list_json_videos()

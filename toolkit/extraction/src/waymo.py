@@ -14,7 +14,7 @@ from waymo_open_dataset import dataset_pb2 as open_dataset
 
 class WaymoToolKit:
     def __init__(self, tfrecord_dir=None,  images_dir=None, labels_json=None, image_or_label=None):
-
+        
         self.segment = None
         
         self.tfrecord_dir = tfrecord_dir
