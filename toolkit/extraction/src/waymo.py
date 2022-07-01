@@ -4,6 +4,7 @@ import threading
 from typing_extensions import dataclass_transform
 import json
 import cv2
+import random
 import tensorflow.compat.v1 as tf
 tf.enable_eager_execution()
 
@@ -12,9 +13,19 @@ from google.protobuf.json_format import MessageToDict # utile per manipolare i p
 from waymo_open_dataset.utils import frame_utils
 from waymo_open_dataset import dataset_pb2 as open_dataset
 
+# function for generating unique ids
+#####################################
+def uniqueid():
+    seed = random.getrandbits(20)
+    while True:
+       yield seed
+       seed += 1
+#####################################
+
 class WaymoToolKit:
     def __init__(self, tfrecord_dir=None,  images_dir=None, labels_json=None, image_or_label=None):
-        self.counter = 0
+        self.get_id = uniqueid()
+        self.frame_ids = {"FRONT" : None, "FRONT_RIGHT" : None, "FRONT_LEFT" : None}
         self.segment = None
         
         self.tfrecord_dir = tfrecord_dir
@@ -50,11 +61,12 @@ class WaymoToolKit:
             l = []
             for data in frame.images:
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                    id = self.segment[:-28]+str(ndx)+"_"+self.camera_list[data.name]
-                    l.append({"id" : id, "name" : (str(ndx)+"_"+self.camera_list[data.name]+".png"), "video_id" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
-                    self.counter = self.counter + 1
+                    #id = self.segment[:-28]+str(ndx)+"_"+self.camera_list[data.name]
+                    camera_type = self.camera_list[data.name]=="FRONT"
+                    id = next(self.get_id)
+                    self.frame_ids[camera_type] = id
+                    l.append({"id" : id, "file_name" : (self.segment[:-28]+"/"+str(ndx)+"_"+self.camera_list[data.name]+".png"), "video_id" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
             self.update_json_image(l)
-
     # Extract Camera Label
     def extract_labels(self, ndx, frame): # ogni volta devo aggiungere una label
         l=[]
@@ -82,22 +94,19 @@ class WaymoToolKit:
                                 cat_id = 2
                             id = label["id"]
                             bbox = [x, y, length, width]
-                            name_image = self.segment[:-28]+str(ndx)+"_"+camera_name
-                            l.append({"id" : id, "image_id" : name_image, "category_id" : cat_id, "bbox" :  bbox})
+                            #name_image = self.segment[:-28]+str(ndx)+"_"+camera_name
+                            image_id = self.frame_ids[camera_name]
+                            l.append({"id" : id, "image_id" : image_id, "category_id" : cat_id, "bbox" :  bbox})
         self.update_json_annotation(l)
                
     
     # Implemented Extraction as Threads
-    def camera_image_extraction_thread(self, datasetAsList, range_value, totalFrames):
+    def camera_image_extraction_thread(self, datasetAsList, range_value):
         frame = open_dataset.Frame() # estraggo il Frame
         for frameIdx in range_value:
             print("*************** processing frame {} ***************".format(frameIdx))
             frame.ParseFromString(datasetAsList[frameIdx])
-            if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
-                self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day, frame.context.stats.weather)
             self.extract_image(frameIdx, frame)
-            if self.image_or_label == "label":
-                self.extract_labels(frameIdx, frame)
 
     # Function to call to extract images
     def extract_camera_images(self): # we're processing only one segment
@@ -118,6 +127,7 @@ class WaymoToolKit:
         if self.image_or_label == "label": # NO MULTITHREADING
             frame = open_dataset.Frame()
             for frameIdx in range(0, totalFrames):
+                self.frame_ids = {"FRONT" : None, "FRONT_RIGHT" : None, "FRONT_LEFT" : None}
                 print("*************** processing frame {} ***************".format(frameIdx))
                 frame.ParseFromString(datasetAsList[frameIdx])
                 if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
@@ -129,7 +139,7 @@ class WaymoToolKit:
         elif self.image_or_label == "image": # MULTITHREADING
             threads = []
             for i in self.batch(range(totalFrames), 30): # ogni thread si occupa di 30 frame alla volta
-                t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i, totalFrames])
+                t = threading.Thread(target=self.camera_image_extraction_thread, args=[datasetAsList, i])
                 t.start()
                 threads.append(t)
             
@@ -171,7 +181,6 @@ class WaymoToolKit:
             f = open(self.labels_json, "w")
             json.dump(self.json_dictionary, f) 
             print("Done!")
-            print(self.counter)
             
     ######## Util Functions ########
 
