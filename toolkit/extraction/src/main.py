@@ -9,8 +9,10 @@ def clean_json(coco, d, lookup_video):
     d["categories"] = coco.loadCats([0,1,2])
     for img in coco.dataset["images"]:
         img["video_id"] = lookup_video[img["sid"]]
+        img["file_name"] = img["video_id"] + "/" + img["name"]
         img.pop("sid",None)
         img.pop("fid",None)
+        img.pop("name",None)
     d["images"] = coco.dataset["images"]
     ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False
     for ann in coco.dataset["annotations"]:
@@ -50,6 +52,7 @@ if __name__=="__main__":
         d = {}
         coco = COCO(old_labels_json)
         list_videos = coco.dataset["sequences"] 
+        d["info"] = coco.dataset["info"]
         d["videos"] = []
         lookup_video = {}
         for i, name_video in enumerate(list_videos):

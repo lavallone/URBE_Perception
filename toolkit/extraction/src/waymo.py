@@ -23,7 +23,7 @@ class WaymoToolKit:
         
         self.image_or_label = image_or_label
         self.images_seg_dir = None
-        self.json_dictionary = json.load(open(labels_json)) # vedere se funziona
+        self.json_dictionary = json.load(open(labels_json))
 
         self.camera_list = ["UNKNOWN", "FRONT", "FRONT_LEFT", "FRONT_RIGHT", "SIDE_LEFT", "SIDE_RIGHT"]
 
