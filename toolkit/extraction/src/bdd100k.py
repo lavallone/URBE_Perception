@@ -1,11 +1,21 @@
 import os
 import threading
 import json
+import random
+
+# function for generating unique ids
+#####################################
+def uniqueid():
+    seed = random.getrandbits(20)
+    while True:
+       yield seed
+       seed += 1
+#####################################
 
 class BDD100KToolKit:
     def __init__(self, labels_json=None, labels_dir=None):
 
-        #self.json_video = None
+        self.get_id = uniqueid()
         
         self.labels_dir = labels_dir
         self.labels_json = labels_json
@@ -28,11 +38,12 @@ class BDD100KToolKit:
 
             list_image = []
             for image_dict in d:
-                name_image = image_dict["name"]
-                id_image = name_video + name_image[:-4]
+                name_image = name_video +"/" + image_dict["name"]
+                #id_image = name_video + name_image[:-4]
+                image_id = next(self.get_id)
                 width = 1280
                 height = 720
-                list_image.append({"id" : id_image, "name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
+                list_image.append({"id" : image_id, "file_name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
                 list_labels = []
                 for label in image_dict["labels"]:
                     if label["category"] == "car" or label["category"] == "pedestrian" or label["category"] == "bycicle":
@@ -52,7 +63,7 @@ class BDD100KToolKit:
                                 cat_id = 1
                             else:
                                 cat_id = 2
-                            list_labels.append({"id" : id, "image_id" : id_image, "category_id" : cat_id, "bbox" :  bbox})
+                            list_labels.append({"id" : id, "image_id" : image_id, "category_id" : cat_id, "bbox" :  bbox})
                 self.update_json_annotation(list_labels)
             self.update_json_image(list_image)
            
@@ -71,7 +82,6 @@ class BDD100KToolKit:
                 print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
             else:
                 print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
-            #self.json_video = json_video
             
             t = threading.Thread(target=self.extract_labels, args=[json_video])
             t.start()
@@ -85,12 +95,7 @@ class BDD100KToolKit:
         print("loading the new label_json file...")
         f = open(self.labels_json, "w")
         json.dump(self.json_dictionary, f) 
-        print("Done!")
-        
-    def batch(self, iterable, n=1):
-        l = len(iterable)
-        for ndx in range(0, l, n):
-            yield iterable[ndx:min(ndx + n, l)]        
+        print("Done!")    
             
     def update_json_video(self, name, num_frames, time_of_day=None, weather=None):
         self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })

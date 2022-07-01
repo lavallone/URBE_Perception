@@ -1,7 +1,6 @@
 import os
 import glob
 import threading
-from typing_extensions import dataclass_transform
 import json
 import cv2
 import random
@@ -9,8 +8,6 @@ import tensorflow.compat.v1 as tf
 tf.enable_eager_execution()
 
 from google.protobuf.json_format import MessageToDict # utile per manipolare i proto buffers
-
-from waymo_open_dataset.utils import frame_utils
 from waymo_open_dataset import dataset_pb2 as open_dataset
 
 # function for generating unique ids
@@ -61,7 +58,6 @@ class WaymoToolKit:
             l = []
             for data in frame.images:
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                    #id = self.segment[:-28]+str(ndx)+"_"+self.camera_list[data.name]
                     camera_type = self.camera_list[data.name]=="FRONT"
                     id = next(self.get_id)
                     self.frame_ids[camera_type] = id
@@ -94,7 +90,6 @@ class WaymoToolKit:
                                 cat_id = 2
                             id = label["id"]
                             bbox = [x, y, length, width]
-                            #name_image = self.segment[:-28]+str(ndx)+"_"+camera_name
                             image_id = self.frame_ids[camera_name]
                             l.append({"id" : id, "image_id" : image_id, "category_id" : cat_id, "bbox" :  bbox})
         self.update_json_annotation(l)
