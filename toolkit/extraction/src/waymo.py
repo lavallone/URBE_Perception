@@ -58,7 +58,7 @@ class WaymoToolKit:
             l = []
             for data in frame.images:
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                    camera_type = self.camera_list[data.name]=="FRONT"
+                    camera_type = self.camera_list[data.name]
                     id = next(self.get_id)
                     self.frame_ids[camera_type] = id
                     l.append({"id" : id, "file_name" : (self.segment[:-28]+"/"+str(ndx)+"_"+self.camera_list[data.name]+".png"), "video_id" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
