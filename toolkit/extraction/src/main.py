@@ -14,15 +14,18 @@ def clean_json(coco, d, lookup_video):
         img.pop("fid",None)
         img.pop("name",None)
     d["images"] = coco.dataset["images"]
-    ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False
+    #ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False
+    ann_ids=[]
     for ann in coco.dataset["annotations"]:
-        #if (ann["category_id"]!=0 and ann["category_id"]!=1 and ann["category_id"]!=2) and ann["iscrowd"]==False:
+        if (ann["category_id"]!=0 and ann["category_id"]!=1 and ann["category_id"]!=2) and ann["iscrowd"]==False:
             #ann_ids.remove(ann["id"])
-        #else:    
+            continue
+        else:    
             ann.pop("area",None)
             ann.pop("ignore",None)
             ann.pop("track",None)
             ann.pop("iscrowd",None)
+            ann_ids.append(ann["id"])
     d["annotations"] = coco.loadAnns(ann_ids)
 
 if __name__=="__main__":
