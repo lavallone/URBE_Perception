@@ -17,7 +17,7 @@ def clean_json(coco, d, lookup_video):
     ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False
     for ann in coco.dataset["annotations"]:
         #if (ann["category_id"]!=0 and ann["category_id"]!=1 and ann["category_id"]!=2) and ann["iscrowd"]==False:
-            ann_ids.remove(ann["id"])
+            #ann_ids.remove(ann["id"])
         #else:    
             ann.pop("area",None)
             ann.pop("ignore",None)
