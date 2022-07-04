@@ -22,7 +22,7 @@ def clean_json(coco, d, lookup_video):
             ann.pop("track",None)
             ann.pop("iscrowd",None)
         else:
-            ann_ids.remove(ann["id"])
+            ann_ids.remove(int(ann["id"]))
     d["annotations"] = coco.loadAnns(ann_ids)
 
 if __name__=="__main__":
