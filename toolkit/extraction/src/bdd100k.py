@@ -49,13 +49,13 @@ class BDD100KToolKit:
                     if label["category"] == "car" or label["category"] == "pedestrian" or label["category"] == "bycicle":
                         if label["attributes"]["occluded"] == False and label["attributes"]["truncated"] == False:
                             id = label["id"]
-                            # Ipotizzando che (x1,y1) è l'angolo sx di sopra e (x2,y2) quello dx di sotto...
+                            # Ipotizzando che (x1,y1) è l'angolo sx di sotto e (x2,y2) quello dx di sopra...
                             x1 = label["box2d"]["x1"]
                             y1 = label["box2d"]["y1"]
                             x2 = label["box2d"]["x2"]
                             y2 = label["box2d"]["y2"]
                             w = x2-x1
-                            h = y1-y2
+                            h = y2-y1
                             bbox = [x1, x2, w, h]
                             if label["category"] == "car":
                                 cat_id = 0
