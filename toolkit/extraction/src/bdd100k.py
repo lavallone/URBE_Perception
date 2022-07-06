@@ -56,7 +56,7 @@ class BDD100KToolKit:
                             y2 = label["box2d"]["y2"]
                             w = x2-x1
                             h = y2-y1
-                            bbox = [x1, x2, w, h]
+                            bbox = [x1, y1, w, h]
                             if label["category"] == "car":
                                 cat_id = 0
                             elif label["category"] == "pedestrian":
