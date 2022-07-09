@@ -20,7 +20,7 @@ class BDD100KToolKit:
         self.labels_dir = labels_dir
         self.labels_json = labels_json
         
-        self.json_dictionary = json.load(open(labels_json))
+        self.json_dictionary = None #json.load(open(labels_json))
         
     def list_json_videos(self):
         l = []
@@ -46,7 +46,7 @@ class BDD100KToolKit:
                 list_image.append({"id" : image_id, "file_name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
                 list_labels = []
                 for label in image_dict["labels"]:
-                    if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "bicycle" or label["category"] == "motorcycle":
+                    if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "other vehicle" or label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "other person" or label["category"] == "bicycle" or label["category"] == "motorcycle":
                         if label["attributes"]["truncated"] == False and label["attributes"]["crowd"] == False:
                             id = label["id"]
                             # Ipotizzando che (x1,y1) è l'angolo sx di sotto e (x2,y2) quello dx di sopra...
@@ -57,9 +57,9 @@ class BDD100KToolKit:
                             w = x2-x1
                             h = y2-y1
                             bbox = [x1, y1, w, h]
-                            if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus":
+                            if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "other vehicle":
                                 cat_id = 0
-                            elif label["category"] == "pedestrian" or label["category"] == "rider":
+                            elif label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "other person":
                                 cat_id = 1
                             else:
                                 cat_id = 2
@@ -74,7 +74,7 @@ class BDD100KToolKit:
         list_json_videos = self.list_json_videos()
         num_json_video = len(list_json_videos)
             
-        for json_video in list_json_videos:
+        for json_video in list_json_videos: # 1200 videos
             iteration = iteration + 1
             num_json_video = num_json_video - 1
             print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
@@ -83,9 +83,19 @@ class BDD100KToolKit:
             else:
                 print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
             
+            # appena inizio a processare un video, carico il dizionario AGGIORNATO dal json file
+            self.json_dictionary = json.load(open(self.labels_json))
             t = threading.Thread(target=self.extract_labels, args=[json_video])
             t.start()
             t.join()
+            
+            # appena finisco vado a salvare le modifiche apportate e le salvo sullo stesso json file
+            json.dump(self.json_dictionary, open(self.labels_json, "w"))
+            
+            # if iteration % 100 == 0: # ogni 100 video, per alleggerire il carico, inizio a salvare il 'self.json_dictionary' corrente.
+            #     f = open(self.labels_json, "w")
+            #     json.dump(self.json_dictionary, f)
+            #     f.close()
                 
             if iteration == 10000:
                 break
