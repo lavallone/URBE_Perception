@@ -85,7 +85,7 @@ class BDD100KToolKit:
             
             # appena inizio a processare un video, carico il dizionario AGGIORNATO dal json file
             #self.json_dictionary = json.load(open(self.labels_json))
-            json_dict_index = iteration/200
+            json_dict_index = int(iteration/200)
             t = threading.Thread(target=self.extract_labels, args=[json_video, json_dict_index])
             t.start()
             t.join()
