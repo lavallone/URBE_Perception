@@ -20,7 +20,7 @@ class BDD100KToolKit:
         self.labels_dir = labels_dir
         self.labels_json = labels_json
         
-        self.json_dictionary = json.load(open(labels_json))
+        self.json_dictionaries = [json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json))]
         
     def list_json_videos(self):
         l = []
@@ -29,12 +29,12 @@ class BDD100KToolKit:
                 l.append(file)
         return l
         
-    def extract_labels(self, json_video):
+    def extract_labels(self, json_video, i):
         
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
             totalFrames = d[-1]["frameIndex"] + 1
-            self.update_json_video(name_video, totalFrames)
+            self.update_json_video(name_video, totalFrames, i)
 
             list_image = []
             for image_dict in d:
@@ -64,8 +64,8 @@ class BDD100KToolKit:
                             else:
                                 cat_id = 2
                             list_labels.append({"id" : id, "image_id" : image_id, "category_id" : cat_id, "bbox" :  bbox})
-                self.update_json_annotation(list_labels)
-            self.update_json_image(list_image)
+                self.update_json_annotation(list_labels, i)
+            self.update_json_image(list_image, i)
            
         
     def bdd100k_extraction(self): # provo a implementarlo col multi-threading
@@ -85,7 +85,8 @@ class BDD100KToolKit:
             
             # appena inizio a processare un video, carico il dizionario AGGIORNATO dal json file
             #self.json_dictionary = json.load(open(self.labels_json))
-            t = threading.Thread(target=self.extract_labels, args=[json_video])
+            json_dict_index = iteration/200
+            t = threading.Thread(target=self.extract_labels, args=[json_video, json_dict_index])
             t.start()
             t.join()
             
@@ -97,21 +98,22 @@ class BDD100KToolKit:
             #     json.dump(self.json_dictionary, f)
             #     f.close()
                 
-            if iteration == 200:#10000:
+            if iteration == 10000:
                 break
             
         print("################# Processing is Finished ;) #################")
         print("Number of processed json files: {}".format(iteration))
         print("loading the new label_json file...")
-        f = open(self.labels_json, "w")
-        json.dump(self.json_dictionary, f) 
+        #f = open(self.labels_json, "w")
+        #json.dump(self.json_dictionary, f)
+        #f.close()
         print("Done!")    
             
-    def update_json_video(self, name, num_frames, time_of_day=None):
-        self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day})
+    def update_json_video(self, name, num_frames, i, time_of_day=None):
+        self.json_dictionaries[i]["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day})
         
-    def update_json_image(self, list):
-        self.json_dictionary["images"] = self.json_dictionary["images"] + list
+    def update_json_image(self, list, i):
+        self.json_dictionaries[i]["images"] = self.json_dictionary["images"] + list
         
-    def update_json_annotation(self, list):
-        self.json_dictionary["annotations"] = self.json_dictionary["annotations"] + list
+    def update_json_annotation(self, list, i):
+        self.json_dictionaries[i]["annotations"] = self.json_dictionary["annotations"] + list
