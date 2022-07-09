@@ -191,8 +191,8 @@ class WaymoToolKit:
             except OSError as e:
                 print("Error: %s : %s" % (f, e.strerror))
                 
-    def update_json_video(self, name, num_frames, time_of_day=None, weather=None):
-        self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })
+    def update_json_video(self, name, num_frames, time_of_day=None):
+        self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day})
         
     def update_json_image(self, list):
         self.json_dictionary["images"] = self.json_dictionary["images"] + list
