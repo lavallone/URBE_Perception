@@ -46,8 +46,8 @@ class BDD100KToolKit:
                 list_image.append({"id" : image_id, "file_name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
                 list_labels = []
                 for label in image_dict["labels"]:
-                    if label["category"] == "car" or label["category"] == "pedestrian" or label["category"] == "bycicle":
-                        if label["attributes"]["occluded"] == False and label["attributes"]["truncated"] == False:
+                    if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "bicycle" or label["category"] == "motorcycle":
+                        if label["attributes"]["truncated"] == False and label["attributes"]["crowd"] == False:
                             id = label["id"]
                             # Ipotizzando che (x1,y1) è l'angolo sx di sotto e (x2,y2) quello dx di sopra...
                             x1 = label["box2d"]["x1"]
@@ -57,9 +57,9 @@ class BDD100KToolKit:
                             w = x2-x1
                             h = y2-y1
                             bbox = [x1, y1, w, h]
-                            if label["category"] == "car":
+                            if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus":
                                 cat_id = 0
-                            elif label["category"] == "pedestrian":
+                            elif label["category"] == "pedestrian" or label["category"] == "rider":
                                 cat_id = 1
                             else:
                                 cat_id = 2
@@ -97,8 +97,8 @@ class BDD100KToolKit:
         json.dump(self.json_dictionary, f) 
         print("Done!")    
             
-    def update_json_video(self, name, num_frames, time_of_day=None, weather=None):
-        self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day, "weather" :weather })
+    def update_json_video(self, name, num_frames, time_of_day=None):
+        self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day})
         
     def update_json_image(self, list):
         self.json_dictionary["images"] = self.json_dictionary["images"] + list
