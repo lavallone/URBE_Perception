@@ -113,7 +113,7 @@ class BDD100KToolKit:
         self.json_dictionaries[i]["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day})
         
     def update_json_image(self, list, i):
-        self.json_dictionaries[i]["images"] = self.json_dictionary["images"] + list
+        self.json_dictionaries[i]["images"] = self.json_dictionaries[i]["images"] + list
         
     def update_json_annotation(self, list, i):
-        self.json_dictionaries[i]["annotations"] = self.json_dictionary["annotations"] + list
+        self.json_dictionaries[i]["annotations"] = self.json_dictionaries[i]["annotations"] + list
