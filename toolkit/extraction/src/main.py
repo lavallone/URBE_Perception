@@ -6,7 +6,7 @@ import bdd100k
 from pycocotools.coco import COCO
 
 def clean_json(coco, d, lookup_video):
-    d["categories"] = coco.loadCats([0,1,2])
+    d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}, {"name" : "two-wheeler", "id" : 2}]
     for img in coco.dataset["images"]:
         img["video_id"] = lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
@@ -18,11 +18,17 @@ def clean_json(coco, d, lookup_video):
     ann_ids=[]
     for ann in coco.dataset["annotations"]:
         if ann["iscrowd"]==False:
-            if ann["category_id"]==0 or ann["category_id"]==1 or ann["category_id"]==2:
+            if ann["category_id"]==0 or ann["category_id"]==1 or ann["category_id"]==2 or ann["category_id"]==3 or ann["category_id"]==4 or ann["category_id"]==5:
                 ann.pop("area",None)
                 ann.pop("ignore",None)
                 ann.pop("track",None)
                 ann.pop("iscrowd",None)
+                if ann["category_id"]==0: # quindi è una persona
+                    ann["category_id"] = 1
+                elif ann["category_id"]==2 or ann["category_id"]==4 or ann["category_id"]==5:
+                    ann["category_id"] = 0
+                else:
+                    ann["category_id"] = 2
                 ann_ids.append(ann["id"])
             else:
                 continue
@@ -66,7 +72,7 @@ if __name__=="__main__":
             totalFrames = 0
             for f in os.listdir(images_dir+"/"+name_video):
                 totalFrames = totalFrames + 1
-            d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None, "weather" : None })
+            d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None})
         # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
         print("cleaning 'old_train.json'...") 
         clean_json(coco, d, lookup_video)
