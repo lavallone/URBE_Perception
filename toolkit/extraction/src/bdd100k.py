@@ -20,7 +20,7 @@ class BDD100KToolKit:
         self.labels_dir = labels_dir
         self.labels_json = labels_json
         
-        self.json_dictionaries = [json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json)), json.load(open(labels_json))]
+        self.json_dictionaries = None
         
     def list_json_videos(self):
         l = []
@@ -73,8 +73,13 @@ class BDD100KToolKit:
         iteration = 0
         list_json_videos = self.list_json_videos()
         num_json_video = len(list_json_videos)
+        
+        num_dictionaries = int(num_json_video/200)
+        for _ in range(num_dictionaries):
+            self.json_dictionaries.append(json.load(open(self.labels_json)))
             
         for json_video in list_json_videos: # 1200 videos
+            json_dict_index = int(iteration/200)
             iteration = iteration + 1
             num_json_video = num_json_video - 1
             print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
@@ -85,7 +90,6 @@ class BDD100KToolKit:
             
             # appena inizio a processare un video, carico il dizionario AGGIORNATO dal json file
             #self.json_dictionary = json.load(open(self.labels_json))
-            json_dict_index = int(iteration/200)
             t = threading.Thread(target=self.extract_labels, args=[json_video, json_dict_index])
             t.start()
             t.join()
@@ -104,9 +108,14 @@ class BDD100KToolKit:
         print("################# Processing is Finished ;) #################")
         print("Number of processed json files: {}".format(iteration))
         print("loading the new label_json file...")
-        #f = open(self.labels_json, "w")
-        #json.dump(self.json_dictionary, f)
-        #f.close()
+        d = self.json_dictionaries[0]
+        for dict in self.json_dictionaries[1:]:
+            d["videos"] = d["videos"] + dict["videos"]
+            d["images"] = d["images"] + dict["images"]
+            d["annotations"] = d["annotations"] + dict["annotations"]
+        f = open(self.labels_json, "w")
+        json.dump(d, f)
+        f.close()
         print("Done!")    
             
     def update_json_video(self, name, num_frames, i, time_of_day=None):
