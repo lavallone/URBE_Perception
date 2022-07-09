@@ -73,7 +73,7 @@ class WaymoToolKit:
                 labels = camera["labels"]
                 for label in labels: # iteriamo sulle labels di una singola immagine
                     if label["type"] == "TYPE_VEHICLE" or label["type"] == "TYPE_PEDESTRIAN" or label["type"] == "TYPE_CYCLIST":
-                        if "detectionDifficultyLevel" in label.keys() and (label["detectionDifficultyLevel"] == "LEVEL_2" or label["trackingDifficultyLevel"] == "LEVEL_2"): # vado a filtrare anche gli oggetti più difficili da identificare
+                        if "detectionDifficultyLevel" in label.keys() and label["detectionDifficultyLevel"] == "LEVEL_2": # vado a filtrare anche gli oggetti più difficili da identificare
                             continue
                         else:    
                             x = label["box"]["centerX"]
@@ -126,7 +126,7 @@ class WaymoToolKit:
                 print("*************** processing frame {} ***************".format(frameIdx))
                 frame.ParseFromString(datasetAsList[frameIdx])
                 if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
-                    self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day, frame.context.stats.weather)
+                    self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day)
                 self.extract_image(frameIdx, frame)
                 if self.image_or_label == "label":
                     self.extract_labels(frameIdx, frame)
