@@ -20,7 +20,7 @@ class BDD100KToolKit:
         self.labels_dir = labels_dir
         self.labels_json = labels_json
         
-        self.json_dictionary = None #json.load(open(labels_json))
+        self.json_dictionary = json.load(open(labels_json))
         
     def list_json_videos(self):
         l = []
@@ -84,20 +84,20 @@ class BDD100KToolKit:
                 print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
             
             # appena inizio a processare un video, carico il dizionario AGGIORNATO dal json file
-            self.json_dictionary = json.load(open(self.labels_json))
+            #self.json_dictionary = json.load(open(self.labels_json))
             t = threading.Thread(target=self.extract_labels, args=[json_video])
             t.start()
             t.join()
             
             # appena finisco vado a salvare le modifiche apportate e le salvo sullo stesso json file
-            json.dump(self.json_dictionary, open(self.labels_json, "w"))
+            #json.dump(self.json_dictionary, open(self.labels_json, "w"))
             
             # if iteration % 100 == 0: # ogni 100 video, per alleggerire il carico, inizio a salvare il 'self.json_dictionary' corrente.
             #     f = open(self.labels_json, "w")
             #     json.dump(self.json_dictionary, f)
             #     f.close()
                 
-            if iteration == 10000:
+            if iteration == 200#10000:
                 break
             
         print("################# Processing is Finished ;) #################")
