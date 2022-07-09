@@ -20,7 +20,7 @@ class BDD100KToolKit:
         self.labels_dir = labels_dir
         self.labels_json = labels_json
         
-        self.json_dictionaries = None
+        self.json_dictionaries = []
         
     def list_json_videos(self):
         l = []
