@@ -97,7 +97,7 @@ class BDD100KToolKit:
             #     json.dump(self.json_dictionary, f)
             #     f.close()
                 
-            if iteration == 200#10000:
+            if iteration == 200:#10000:
                 break
             
         print("################# Processing is Finished ;) #################")
