@@ -73,9 +73,7 @@ class WaymoToolKit:
                 labels = camera["labels"]
                 for label in labels: # iteriamo sulle labels di una singola immagine
                     if label["type"] == "TYPE_VEHICLE" or label["type"] == "TYPE_PEDESTRIAN" or label["type"] == "TYPE_CYCLIST":
-                        if "detectionDifficultyLevel" in label.keys() and label["detectionDifficultyLevel"] == "LEVEL_2": # vado a filtrare anche gli oggetti più difficili da identificare
-                            continue
-                        else:    
+                        if "detectionDifficultyLevel" not in label.keys() or ("detectionDifficultyLevel" in label.keys() and label["detectionDifficultyLevel"]=="LEVEL_1"): # vado a filtrare anche gli oggetti più difficili da identificare    
                             x = label["box"]["centerX"]
                             y = label["box"]["centerY"]
                             width = label["box"]["width"]
@@ -84,10 +82,8 @@ class WaymoToolKit:
                             y = y - 0.5 * width
                             if label["type"] == "TYPE_VEHICLE":
                                 cat_id = 0
-                            elif label["type"] == "TYPE_PEDESTRIAN":
+                            elif label["type"] == "TYPE_PEDESTRIAN" or label["type"] == "TYPE_CYCLIST":
                                 cat_id = 1
-                            else:
-                                cat_id = 2
                             id = label["id"]
                             bbox = [x, y, length, width]
                             image_id = self.frame_ids[camera_name]
