@@ -6,7 +6,7 @@ import bdd100k
 from pycocotools.coco import COCO
 
 def clean_json(coco, d, lookup_video):
-    d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}, {"name" : "two-wheeler", "id" : 2}]
+    d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}]
     for img in coco.dataset["images"]:
         img["video_id"] = lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]

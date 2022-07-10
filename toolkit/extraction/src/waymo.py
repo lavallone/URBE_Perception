@@ -46,6 +46,12 @@ class WaymoToolKit:
                 seg_list.append(file)
         return seg_list
     
+    def annotation_filter(self, label):
+        if "detectionDifficultyLevel" not in label.keys() or ("detectionDifficultyLevel" in label.keys() and label["detectionDifficultyLevel"]=="LEVEL_1"):
+            if "trackingDifficultyLevel" not in label.keys() or ("trackingDifficultyLevel" in label.keys() and label["trackingDifficultyLevel"]=="LEVEL_1"):
+                return True
+        return False
+    
     # Extract Camera Image
     def extract_image(self, ndx, frame):
         if self.image_or_label == "image":
@@ -73,7 +79,7 @@ class WaymoToolKit:
                 labels = camera["labels"]
                 for label in labels: # iteriamo sulle labels di una singola immagine
                     if label["type"] == "TYPE_VEHICLE" or label["type"] == "TYPE_PEDESTRIAN" or label["type"] == "TYPE_CYCLIST":
-                        if "detectionDifficultyLevel" not in label.keys() or ("detectionDifficultyLevel" in label.keys() and label["detectionDifficultyLevel"]=="LEVEL_1"): # vado a filtrare anche gli oggetti più difficili da identificare    
+                        if self.annotation_filter(label)==True : # vado a filtrare anche gli oggetti più difficili da identificare    
                             x = label["box"]["centerX"]
                             y = label["box"]["centerY"]
                             width = label["box"]["width"]
