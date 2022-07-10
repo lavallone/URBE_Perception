@@ -46,7 +46,7 @@ class BDD100KToolKit:
                 list_image.append({"id" : image_id, "file_name" : name_image, "video_id" : name_video, "width" : width, "height" : height})
                 list_labels = []
                 for label in image_dict["labels"]:
-                    if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "other vehicle" or label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "other person" or label["category"] == "bicycle" or label["category"] == "motorcycle":
+                    if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "other person"  or label["category"] == "motorcycle":
                         if label["attributes"]["truncated"] == False and label["attributes"]["crowd"] == False:
                             id = label["id"]
                             # Ipotizzando che (x1,y1) è l'angolo sx di sotto e (x2,y2) quello dx di sopra...
@@ -57,18 +57,16 @@ class BDD100KToolKit:
                             w = x2-x1
                             h = y2-y1
                             bbox = [x1, y1, w, h]
-                            if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "other vehicle":
+                            if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "motorcycle":
                                 cat_id = 0
                             elif label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "other person":
                                 cat_id = 1
-                            else:
-                                cat_id = 2
                             list_labels.append({"id" : id, "image_id" : image_id, "category_id" : cat_id, "bbox" :  bbox})
                 self.update_json_annotation(list_labels, i)
             self.update_json_image(list_image, i)
            
         
-    def bdd100k_extraction(self): # provo a implementarlo col multi-threading
+    def bdd100k_extraction(self):
         
         iteration = 0
         list_json_videos = self.list_json_videos()
@@ -77,6 +75,7 @@ class BDD100KToolKit:
         num_dictionaries = int(num_json_video/200)
         for _ in range(num_dictionaries):
             self.json_dictionaries.append(json.load(open(self.labels_json)))
+        print("----------- We created {} 'support dictionaries' to improve efficiency -----------".format(len(self.json_dictionaries)))
             
         for json_video in list_json_videos: # 1200 videos
             json_dict_index = int(iteration/200)
@@ -102,7 +101,7 @@ class BDD100KToolKit:
             #     json.dump(self.json_dictionary, f)
             #     f.close()
                 
-            if iteration == 10000:
+            if iteration == 1500:
                 break
             
         print("################# Processing is Finished ;) #################")
@@ -115,7 +114,6 @@ class BDD100KToolKit:
             d["annotations"] = d["annotations"] + dict["annotations"]
         f = open(self.labels_json, "w")
         json.dump(d, f)
-        f.close()
         print("Done!")    
             
     def update_json_video(self, name, num_frames, i, time_of_day=None):
