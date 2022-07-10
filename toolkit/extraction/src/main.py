@@ -18,17 +18,15 @@ def clean_json(coco, d, lookup_video):
     ann_ids=[]
     for ann in coco.dataset["annotations"]:
         if ann["iscrowd"]==False:
-            if ann["category_id"]==0 or ann["category_id"]==1 or ann["category_id"]==2 or ann["category_id"]==3 or ann["category_id"]==4 or ann["category_id"]==5:
+            if ann["category_id"]==0 or ann["category_id"]==2 or ann["category_id"]==3 or ann["category_id"]==4 or ann["category_id"]==5:
                 ann.pop("area",None)
                 ann.pop("ignore",None)
                 ann.pop("track",None)
                 ann.pop("iscrowd",None)
-                if ann["category_id"]==0: # quindi è una persona
-                    ann["category_id"] = 1
-                elif ann["category_id"]==2 or ann["category_id"]==4 or ann["category_id"]==5:
+                if ann["category_id"]==2 or ann["category_id"]==4 or ann["category_id"]==5 or ann["category_id"]==3:
                     ann["category_id"] = 0
-                else:
-                    ann["category_id"] = 2
+                elif ann["category_id"]==0:
+                    ann["category_id"] = 1
                 ann_ids.append(ann["id"])
             else:
                 continue
