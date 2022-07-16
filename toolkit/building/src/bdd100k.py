@@ -39,14 +39,12 @@ class BDD100KToolKit:
                 if self.timeofday_list[i]["video_name"] == name_video:
                     timeofday = self.timeofday_list.pop(i)["timeofday"]
                     break
-            #timeofday = [self.timeofday_list.pop(i)["timeofday"] for i in range(len(self.timeofday_list)) if self.timeofday_list[i]["video_name"] == name_video][0]
             totalFrames = d[-1]["frameIndex"] + 1
             #self.update_json_video(name_video, totalFrames, i)
 
             list_image = []
             for image_dict in d:
                 name_image = name_video +"/" + image_dict["name"]
-                #id_image = name_video + name_image[:-4]
                 image_id = next(self.get_id)
                 width = 1280
                 height = 720
@@ -81,13 +79,13 @@ class BDD100KToolKit:
         list_json_videos = self.list_json_videos()
         num_json_video = len(list_json_videos)
         
-        num_dictionaries = int(num_json_video/200)
+        num_dictionaries = int(num_json_video/100)
         for _ in range(num_dictionaries):
             self.json_dictionaries.append(json.load(open(self.labels_json)))
         print("----------- We created {} 'support dictionaries' to improve efficiency -----------".format(len(self.json_dictionaries)))
             
-        for json_video in list_json_videos: # 1200 videos
-            json_dict_index = int(iteration/200)
+        for json_video in list_json_videos: # 1400 videos
+            json_dict_index = int(iteration/100)
             iteration = iteration + 1
             num_json_video = num_json_video - 1
             print("^^^^^^^^^^^^^^^^^^^^^^ Starting processing {} ^^^^^^^^^^^^^^^^^^^^^^".format(json_video))
@@ -95,20 +93,10 @@ class BDD100KToolKit:
                 print("^^^^^^^^^^^^^^^^^^^^^^     {} json files left     ^^^^^^^^^^^^^^^^^^^^^^".format(num_json_video))
             else:
                 print("^^^^^^^^^^^^^^^^^^^^^^  Last json file to process ^^^^^^^^^^^^^^^^^^^^^^")
-            
-            # appena inizio a processare un video, carico il dizionario AGGIORNATO dal json file
-            #self.json_dictionary = json.load(open(self.labels_json))
+                
             t = threading.Thread(target=self.build_labels, args=[json_video, json_dict_index])
             t.start()
             t.join()
-            
-            # appena finisco vado a salvare le modifiche apportate e le salvo sullo stesso json file
-            #json.dump(self.json_dictionary, open(self.labels_json, "w"))
-            
-            # if iteration % 100 == 0: # ogni 100 video, per alleggerire il carico, inizio a salvare il 'self.json_dictionary' corrente.
-            #     f = open(self.labels_json, "w")
-            #     json.dump(self.json_dictionary, f)
-            #     f.close()
                 
             if iteration == 1500:
                 break

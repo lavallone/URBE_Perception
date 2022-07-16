@@ -10,8 +10,7 @@ def add_timeofday():
   print("Building 'timeofday_list'...")
   d1 = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/det_train.json"))
   d2 = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/det_val.json"))
-  #labels_dict = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/annotations.json"))
-
+  
   video_list = os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos")
   timeofday_list = []
   for e in d1:
