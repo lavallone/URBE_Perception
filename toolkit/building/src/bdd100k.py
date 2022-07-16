@@ -29,7 +29,7 @@ class BDD100KToolKit:
                 l.append(file)
         return l
         
-    def extract_labels(self, json_video, i):
+    def build_labels(self, json_video, i):
         
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
@@ -66,7 +66,7 @@ class BDD100KToolKit:
             self.update_json_image(list_image, i)
            
         
-    def bdd100k_extraction(self):
+    def bdd100k_building(self):
         
         iteration = 0
         list_json_videos = self.list_json_videos()
@@ -89,7 +89,7 @@ class BDD100KToolKit:
             
             # appena inizio a processare un video, carico il dizionario AGGIORNATO dal json file
             #self.json_dictionary = json.load(open(self.labels_json))
-            t = threading.Thread(target=self.extract_labels, args=[json_video, json_dict_index])
+            t = threading.Thread(target=self.build_labels, args=[json_video, json_dict_index])
             t.start()
             t.join()
             

@@ -143,7 +143,7 @@ class WaymoToolKit:
             for thread in threads:
                 thread.join()
 
-    def waymo_extraction(self):
+    def waymo_building(self):
         
         ##############  REMINDER !!!! #################
         # The segments that will be processed are the #

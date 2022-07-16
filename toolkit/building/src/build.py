@@ -44,14 +44,14 @@ if __name__=="__main__":
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/labels/COCO/annotations.json"
         
         toolkit = waymo.WaymoToolKit(tfrecord_dir=tfrecord_dir, images_dir=images_dir, labels_json=labels_json, image_or_label="image")
-        toolkit.waymo_extraction()
+        toolkit.waymo_building()
         
     elif args.dataset == "bdd100k":
         labels_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/train/old_json"
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/train/train.json"
         
         toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json)
-        toolkit.bdd100k_extraction()
+        toolkit.bdd100k_building()
         
     elif args.dataset == "argoverse": # since the labels are COCO-like, we just need to clean the already existed json file!
         images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/train/videos"
