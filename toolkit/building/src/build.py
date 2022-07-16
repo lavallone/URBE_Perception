@@ -5,32 +5,81 @@ import waymo
 import bdd100k
 from pycocotools.coco import COCO
 
-def clean_json(coco, d, lookup_video):
-    d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}]
-    for img in coco.dataset["images"]:
+def add_timeofday():
+    
+  d1 = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/det_train.json"))
+  d2 = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/det_train.json"))
+  #labels_dict = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/annotations.json"))
+
+  video_list = os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos")
+  timeofday_list = []
+  for e in d1:
+    if e["name"][:-4] in video_list:
+      timeofday_list.append({"video_name" : e["name"][:-4], "timeofday" : e["attributes"]["timeofday"]})
+  for e in d2:
+    if e["name"][:-4] in video_list:
+      timeofday_list.append({"video_name" : e["name"][:-4], "timeofday" : e["attributes"]["timeofday"]})
+      
+  return timeofday_list
+
+def clean_json(coco_train, coco_val, d, lookup_video):
+    d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}, {"name" : "motorbike", "id" : 2}]
+    
+    for img in coco_train.dataset["images"]:
+        img["video_id"] = lookup_video[img["sid"]]
+        img["file_name"] = img["video_id"] + "/" + img["name"]
+        img["dataset"] = "argoverse"
+        img["timeofday"] = None
+        img.pop("sid",None)
+        img.pop("fid",None)
+        img.pop("name",None)
+    image_list = coco_train.dataset["images"]
+    for img in coco_val.dataset["images"]:
         img["video_id"] = lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
         img.pop("sid",None)
         img.pop("fid",None)
         img.pop("name",None)
-    d["images"] = coco.dataset["images"]
-    #ann_ids = coco.getAnnIds(iscrowd=False) # andiamo ad allenare la rete solo con bboxes dove iscrowd=False
+    image_list = image_list + coco_val.dataset["images"]
+    d["images"] = image_list
+    
     ann_ids=[]
-    for ann in coco.dataset["annotations"]:
+    for ann in coco_train.dataset["annotations"]:
         if ann["iscrowd"]==False:
             if ann["category_id"]==0 or ann["category_id"]==2 or ann["category_id"]==3 or ann["category_id"]==4 or ann["category_id"]==5:
                 ann.pop("area",None)
                 ann.pop("ignore",None)
                 ann.pop("track",None)
                 ann.pop("iscrowd",None)
-                if ann["category_id"]==2 or ann["category_id"]==4 or ann["category_id"]==5 or ann["category_id"]==3:
+                if ann["category_id"]==2 or ann["category_id"]==4 or ann["category_id"]==5:
                     ann["category_id"] = 0
                 elif ann["category_id"]==0:
                     ann["category_id"] = 1
+                elif ann["category_id"]==3:
+                    ann["category_id"] = 2
                 ann_ids.append(ann["id"])
             else:
                 continue
-    d["annotations"] = coco.loadAnns(ann_ids)
+    ann_list = coco_train.loadAnns(ann_ids)
+    ann_ids=[]
+    for ann in coco_val.dataset["annotations"]:
+        if ann["iscrowd"]==False:
+            if ann["category_id"]==0 or ann["category_id"]==2 or ann["category_id"]==3 or ann["category_id"]==4 or ann["category_id"]==5:
+                ann.pop("area",None)
+                ann.pop("ignore",None)
+                ann.pop("track",None)
+                ann.pop("iscrowd",None)
+                if ann["category_id"]==2 or ann["category_id"]==4 or ann["category_id"]==5:
+                    ann["category_id"] = 0
+                elif ann["category_id"]==0:
+                    ann["category_id"] = 1
+                elif ann["category_id"]==3:
+                    ann["category_id"] = 2
+                ann_ids.append(ann["id"])
+            else:
+                continue
+    ann_list = ann_list + coco_val.loadAnns(ann_ids)
+    d["annotations"] = ann_list
 
 if __name__=="__main__":
     
@@ -47,33 +96,36 @@ if __name__=="__main__":
         toolkit.waymo_building()
         
     elif args.dataset == "bdd100k":
-        labels_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/train/old_json"
-        labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/train/train.json"
+        labels_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/old_json"
+        labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/COCO/annotations.json"
         
-        toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json)
+        toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json, timeofday_list = add_timeofday())
         toolkit.bdd100k_building()
         
     elif args.dataset == "argoverse": # since the labels are COCO-like, we just need to clean the already existed json file!
-        images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/train/videos"
-        old_labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/train/old_train.json"
-        labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/train/train.json"
+        images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos"
+        old_train_labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/old_train.json"
+        old_val_labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/old_val.json"
+        labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/COCO/annotations.json"
 
         
         d = {}
-        coco = COCO(old_labels_json)
-        list_videos = coco.dataset["sequences"] 
-        d["info"] = coco.dataset["info"]
-        d["videos"] = []
+        coco_train = COCO(old_train_labels_json)
+        coco_val = COCO(old_val_labels_json)
+        list_videos = coco_train.dataset["sequences"] 
+        list_videos = list_videos + coco_val.dataset["sequences"]
+        d["info"] = coco_train.dataset["info"]
+        #d["videos"] = []
         lookup_video = {}
         for i, name_video in enumerate(list_videos):
             lookup_video[i] = name_video
             totalFrames = 0
             for f in os.listdir(images_dir+"/"+name_video):
                 totalFrames = totalFrames + 1
-            d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None})
+            #d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None})
         # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
         print("cleaning 'old_train.json'...") 
-        clean_json(coco, d, lookup_video)
+        clean_json(coco_train, coco_val, d, lookup_video)
         print("Done!")
         print("copying to 'train.json'...")
         json.dump(d, open(labels_json, "w"))
