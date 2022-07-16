@@ -102,8 +102,13 @@ if __name__=="__main__":
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/COCO/annotations.json"
         timeofday_list = add_timeofday()
         
-        toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json, timeofday_list = timeofday_list)
-        toolkit.bdd100k_building()
+        print(len(timeofday_list))
+        for e in timeofday_list:
+            if e["video_name"] == "028b04e1-f30d3ac9":
+                print("porco dio")
+        
+        #toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json, timeofday_list = timeofday_list)
+        #toolkit.bdd100k_building()
         
     elif args.dataset == "argoverse": # since the labels are COCO-like, we just need to clean the already existed json file!
         images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos"
