@@ -36,8 +36,11 @@ class BDD100KToolKit:
             name_video = d[0]["videoName"]
             print(name_video)
             for i in range(len(self.timeofday_list)):
-                if self.timeofday_list[i]["video_name"] == name_video:
-                    print(self.timeofday_list.pop(i)["timeofday"])
+                print(i)
+                print(self.timeofday_list[i])
+                print(self.timeofday_list[i]["video_name"])
+                #if self.timeofday_list[i]["video_name"] == name_video:
+                    #print(self.timeofday_list.pop(i)["timeofday"])
             #timeofday = [self.timeofday_list.pop(i)["timeofday"] for i in range(len(self.timeofday_list)) if self.timeofday_list[i]["video_name"] == name_video][0]
             totalFrames = d[-1]["frameIndex"] + 1
             #self.update_json_video(name_video, totalFrames, i)
