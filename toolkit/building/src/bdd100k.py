@@ -30,14 +30,13 @@ class BDD100KToolKit:
                 l.append(file)
         return l
         
-    def build_labels(self, json_video, i):
+    def build_labels(self, json_video, index):
         
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
             timeofday = None
             for i in range(len(self.timeofday_list)):
                 if self.timeofday_list[i]["video_name"] == name_video:
-                    print("voiporcidsadfrefrefherufhurejfefujfjhfurhjehni")
                     timeofday = self.timeofday_list.pop(i)["timeofday"]
                     break
             #timeofday = [self.timeofday_list.pop(i)["timeofday"] for i in range(len(self.timeofday_list)) if self.timeofday_list[i]["video_name"] == name_video][0]
@@ -72,8 +71,8 @@ class BDD100KToolKit:
                             elif label["category"] == "motorcycle":
                                 cat_id = 2
                             list_labels.append({"id" : id, "image_id" : image_id, "category_id" : cat_id, "bbox" :  bbox})
-                self.update_json_annotation(list_labels, i)
-            self.update_json_image(list_image, i)
+                self.update_json_annotation(list_labels, index)
+            self.update_json_image(list_image, index)
            
         
     def bdd100k_building(self):
