@@ -101,7 +101,7 @@ if __name__=="__main__":
         labels_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/old_json"
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/COCO/annotations.json"
         timeofday_list = add_timeofday()
-        print(timeofday_list)
+        print(timeofday_list[:20])
         #toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json, timeofday_list = timeofday_list)
         #toolkit.bdd100k_building()
         
