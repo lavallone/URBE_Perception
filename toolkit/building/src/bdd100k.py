@@ -35,13 +35,15 @@ class BDD100KToolKit:
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
             print(name_video)
+            timeofday = None
             for i in range(len(self.timeofday_list)):
                 print(i)
                 #print(self.timeofday_list[i])
                 #print(self.timeofday_list[i]["video_name"])
                 if self.timeofday_list[i]["video_name"] == name_video:
                     print("voiporcidsadfrefrefherufhurejfefujfjhfurhjehni")
-                    print(self.timeofday_list.pop(i)["timeofday"])
+                    timeofday = self.timeofday_list.pop(i)["timeofday"]
+                    break
             #timeofday = [self.timeofday_list.pop(i)["timeofday"] for i in range(len(self.timeofday_list)) if self.timeofday_list[i]["video_name"] == name_video][0]
             totalFrames = d[-1]["frameIndex"] + 1
             #self.update_json_video(name_video, totalFrames, i)
@@ -53,7 +55,7 @@ class BDD100KToolKit:
                 image_id = next(self.get_id)
                 width = 1280
                 height = 720
-                list_image.append({"id" : image_id, "file_name" : name_image, "video_id" : name_video, "width" : width, "height" : height, "dataset" : "bdd100k", "timeofday" : None})#timeofday})
+                list_image.append({"id" : image_id, "file_name" : name_image, "video_id" : name_video, "width" : width, "height" : height, "dataset" : "bdd100k", "timeofday" : timeofday})
                 list_labels = []
                 for label in image_dict["labels"]:
                     if label["category"] == "car" or label["category"] == "truck" or label["category"] == "bus" or label["category"] == "pedestrian" or label["category"] == "rider" or label["category"] == "other person"  or label["category"] == "motorcycle":
