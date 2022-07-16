@@ -34,12 +34,8 @@ class BDD100KToolKit:
         
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
-            print(name_video)
             timeofday = None
             for i in range(len(self.timeofday_list)):
-                print(i)
-                #print(self.timeofday_list[i])
-                #print(self.timeofday_list[i]["video_name"])
                 if self.timeofday_list[i]["video_name"] == name_video:
                     print("voiporcidsadfrefrefherufhurejfefujfjhfurhjehni")
                     timeofday = self.timeofday_list.pop(i)["timeofday"]
@@ -115,7 +111,7 @@ class BDD100KToolKit:
             #     json.dump(self.json_dictionary, f)
             #     f.close()
                 
-            if iteration == 1:#1500:
+            if iteration == 1500:
                 break
             
         print("################# Processing is Finished ;) #################")
