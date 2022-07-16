@@ -67,7 +67,7 @@ class WaymoToolKit:
                     camera_type = self.camera_list[data.name]
                     id = next(self.get_id)
                     self.frame_ids[camera_type] = id
-                    l.append({"id" : id, "file_name" : (self.segment[:-28]+"/"+str(ndx)+"_"+self.camera_list[data.name]+".png"), "video_id" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height})
+                    l.append({"id" : id, "file_name" : (self.segment[:-28]+"/"+str(ndx)+"_"+self.camera_list[data.name]+".png"), "video_id" : self.segment[:-28], "width" : frame.context.camera_calibrations[0].width, "height" : frame.context.camera_calibrations[0].height, "dataset" : "waymo", "timeofday" : frame.context.stats.time_of_day})
             self.update_json_image(l)
     # Extract Camera Label
     def extract_labels(self, ndx, frame): # ogni volta devo aggiungere una label
@@ -127,8 +127,8 @@ class WaymoToolKit:
                 self.frame_ids = {"FRONT" : None, "FRONT_RIGHT" : None, "FRONT_LEFT" : None}
                 print("*************** processing frame {} ***************".format(frameIdx))
                 frame.ParseFromString(datasetAsList[frameIdx])
-                if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
-                    self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day)
+                #if frameIdx == 0: # aggiungo le informazioni del 'video' solo una volta!
+                #  self.update_json_video(self.segment[:-28], totalFrames, frame.context.stats.time_of_day)
                 self.extract_image(frameIdx, frame)
                 if self.image_or_label == "label":
                     self.extract_labels(frameIdx, frame)
@@ -193,8 +193,8 @@ class WaymoToolKit:
             except OSError as e:
                 print("Error: %s : %s" % (f, e.strerror))
                 
-    def update_json_video(self, name, num_frames, time_of_day=None):
-        self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day})
+    #def update_json_video(self, name, num_frames, time_of_day=None):
+    #    self.json_dictionary["videos"].append({"id" : name, "num_frames" : num_frames, "time" : time_of_day})
         
     def update_json_image(self, list):
         self.json_dictionary["images"] = self.json_dictionary["images"] + list
