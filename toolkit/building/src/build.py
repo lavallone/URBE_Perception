@@ -13,6 +13,7 @@ def add_timeofday():
   #labels_dict = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/annotations.json"))
 
   video_list = os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos")
+  print(len(video_list))
   timeofday_list = []
   for e in d1:
     if e["name"][:-4] in video_list:
