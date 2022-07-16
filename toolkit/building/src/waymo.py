@@ -168,7 +168,7 @@ class WaymoToolKit:
             t.start()
             t.join()
                 
-            if iteration == 100: # for controlling how many segments we're going to process
+            if iteration == 1000: # for controlling how many segments we're going to process
                 break 
             
         print("################# Processing is Finished ;) #################")
