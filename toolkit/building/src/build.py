@@ -6,7 +6,8 @@ import bdd100k
 from pycocotools.coco import COCO
 
 def add_timeofday():
-    
+
+  print("Building 'timeofday_list'...")
   d1 = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/det_train.json"))
   d2 = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/det_train.json"))
   #labels_dict = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/annotations.json"))
@@ -19,7 +20,8 @@ def add_timeofday():
   for e in d2:
     if e["name"][:-4] in video_list:
       timeofday_list.append({"video_name" : e["name"][:-4], "timeofday" : e["attributes"]["timeofday"]})
-      
+
+  print("Done!")
   return timeofday_list
 
 def clean_json(coco_train, coco_val, d, lookup_video):
@@ -98,8 +100,9 @@ if __name__=="__main__":
     elif args.dataset == "bdd100k":
         labels_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/old_json"
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/COCO/annotations.json"
-        
-        toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json, timeofday_list = add_timeofday())
+        timeofday_list = add_timeofday()
+    
+        toolkit = bdd100k.BDD100KToolKit(labels_dir=labels_dir, labels_json=labels_json, timeofday_list = timeofday_list)
         toolkit.bdd100k_building()
         
     elif args.dataset == "argoverse": # since the labels are COCO-like, we just need to clean the already existed json file!
@@ -123,10 +126,10 @@ if __name__=="__main__":
                 totalFrames = totalFrames + 1
             #d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None})
         # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
-        print("cleaning 'old_train.json'...") 
+        print("cleaning 'old_train.json' and 'old_val.json'...") 
         clean_json(coco_train, coco_val, d, lookup_video)
         print("Done!")
-        print("copying to 'train.json'...")
+        print("copying to 'annotations.json'...")
         json.dump(d, open(labels_json, "w"))
         print("Done!")
     else:
