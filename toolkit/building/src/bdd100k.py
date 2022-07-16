@@ -34,7 +34,7 @@ class BDD100KToolKit:
         
             d = json.load(open(self.labels_dir+"/"+json_video))
             name_video = d[0]["videoName"]
-            print(self.timeofday_list)
+            print(self.timeofday_list[0])
             timeofday = [self.timeofday_list.pop(i)["timeofday"] for i in range(len(self.timeofday_list)) if self.timeofday_list[i]["name_video"] == name_video][0]
             totalFrames = d[-1]["frameIndex"] + 1
             #self.update_json_video(name_video, totalFrames, i)
@@ -114,7 +114,7 @@ class BDD100KToolKit:
         print("loading the new label_json file...")
         d = self.json_dictionaries[0]
         for dict in self.json_dictionaries[1:]:
-            d["videos"] = d["videos"] + dict["videos"]
+            #d["videos"] = d["videos"] + dict["videos"]
             d["images"] = d["images"] + dict["images"]
             d["annotations"] = d["annotations"] + dict["annotations"]
         f = open(self.labels_json, "w")
