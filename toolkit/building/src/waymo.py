@@ -58,6 +58,7 @@ class WaymoToolKit:
             for data in frame.images:
                 decodedImage = tf.io.decode_jpeg(data.image, channels=3, dct_method='INTEGER_ACCURATE')
                 decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
+                print(type(ndx))
                 if 0 <= int(ndx) <= 9:
                     ndx = str(00) + ndx
                 elif 10 <= int(ndx) <= 99:
@@ -172,7 +173,7 @@ class WaymoToolKit:
             t.start()
             t.join()
                 
-            if iteration == 1000: # for controlling how many segments we're going to process
+            if iteration == 1:#1000: # for controlling how many segments we're going to process
                 break 
             
         print("################# Processing is Finished ;) #################")
