@@ -63,7 +63,7 @@ class WaymoToolKit:
                 elif 10 <= ndx <= 99:
                     ndx = "0"+str(ndx)
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                    cv2.imwrite("{}/{}_{}.png".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
+                    cv2.imwrite("{}/{}_{}.jpg".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
         elif self.image_or_label == "label":
             l = []
             for data in frame.images:
