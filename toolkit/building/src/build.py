@@ -115,6 +115,7 @@ if __name__=="__main__":
         coco_val = COCO(old_val_labels_json)
         list_videos = coco_train.dataset["sequences"] 
         list_videos = list_videos + coco_val.dataset["sequences"]
+        print(len(list_videos))
         d["info"] = coco_train.dataset["info"]
         #d["videos"] = []
         lookup_video = {}
@@ -124,6 +125,7 @@ if __name__=="__main__":
             for f in os.listdir(images_dir+"/"+name_video):
                 totalFrames = totalFrames + 1
             #d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None})
+        print(len(lookup_video))
         # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
         print("cleaning 'old_train.json' and 'old_val.json'...") 
         clean_json(coco_train, coco_val, d, lookup_video)
