@@ -98,7 +98,7 @@ if __name__=="__main__":
         images_dir = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos"
         labels_json = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/labels/COCO/annotations.json"
         
-        toolkit = waymo.WaymoToolKit(tfrecord_dir=tfrecord_dir, images_dir=images_dir, labels_json=labels_json, image_or_label="label")
+        toolkit = waymo.WaymoToolKit(tfrecord_dir=tfrecord_dir, images_dir=images_dir, labels_json=labels_json, image_or_label="image")
         toolkit.waymo_building()
         
     elif args.dataset == "bdd100k":

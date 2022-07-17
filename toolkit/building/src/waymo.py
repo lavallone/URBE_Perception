@@ -58,6 +58,10 @@ class WaymoToolKit:
             for data in frame.images:
                 decodedImage = tf.io.decode_jpeg(data.image, channels=3, dct_method='INTEGER_ACCURATE')
                 decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
+                if 0 <= ndx <= 9:
+                    ndx = "00"+str(ndx)
+                elif 10 <= ndx <= 99:
+                    ndx = "0"+str(ndx)
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
                     cv2.imwrite("{}/{}_{}.png".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
         elif self.image_or_label == "label":
