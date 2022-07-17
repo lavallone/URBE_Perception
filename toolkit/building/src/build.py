@@ -26,7 +26,6 @@ def add_timeofday():
 def clean_json(coco_train, coco_val, d, lookup_video):
     d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}, {"name" : "motorbike", "id" : 2}]
     
-    print("Images in old_train.json: {}".format(len(coco_train.dataset["images"])))
     for img in coco_train.dataset["images"]:
         img["video_id"] = lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
@@ -36,15 +35,18 @@ def clean_json(coco_train, coco_val, d, lookup_video):
         img.pop("fid",None)
         img.pop("name",None)
     image_list = coco_train.dataset["images"]
-    print("Images in old_val.json: {}".format(len(coco_val.dataset["images"])))
+    start_id = len(image_list)
     for img in coco_val.dataset["images"]:
+        img["id"] = img["id"] + start_id
+        start_id = start_id + 1
         img["video_id"] = lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
+        img["dataset"] = "argoverse"
+        img["timeofday"] = None
         img.pop("sid",None)
         img.pop("fid",None)
         img.pop("name",None)
     image_list = image_list + coco_val.dataset["images"]
-    print("Total number of images according to json files: {}".format(len(image_list)))
     d["images"] = image_list
     
     ann_ids=[]
@@ -118,7 +120,6 @@ if __name__=="__main__":
         coco_val = COCO(old_val_labels_json)
         list_videos = coco_train.dataset["sequences"] 
         list_videos = list_videos + coco_val.dataset["sequences"]
-        print(len(list_videos))
         d["info"] = coco_train.dataset["info"]
         #d["videos"] = []
         lookup_video = {}
@@ -128,7 +129,7 @@ if __name__=="__main__":
             for f in os.listdir(images_dir+"/"+name_video):
                 totalFrames = totalFrames + 1
             #d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None})
-        print(len(lookup_video))
+        
         # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
         print("cleaning 'old_train.json' and 'old_val.json'...") 
         clean_json(coco_train, coco_val, d, lookup_video)
