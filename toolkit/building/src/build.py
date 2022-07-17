@@ -26,6 +26,7 @@ def add_timeofday():
 def clean_json(coco_train, coco_val, d, lookup_video):
     d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}, {"name" : "motorbike", "id" : 2}]
     
+    print("Images in old_train.json: {}".format(len(coco_train.dataset["images"])))
     for img in coco_train.dataset["images"]:
         img["video_id"] = lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
@@ -35,6 +36,7 @@ def clean_json(coco_train, coco_val, d, lookup_video):
         img.pop("fid",None)
         img.pop("name",None)
     image_list = coco_train.dataset["images"]
+    print("Images in old_val.json: {}".format(len(coco_val.dataset["images"])))
     for img in coco_val.dataset["images"]:
         img["video_id"] = lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
@@ -42,6 +44,7 @@ def clean_json(coco_train, coco_val, d, lookup_video):
         img.pop("fid",None)
         img.pop("name",None)
     image_list = image_list + coco_val.dataset["images"]
+    print("Total number of images according to json files: {}".format(len(image_list)))
     d["images"] = image_list
     
     ann_ids=[]
