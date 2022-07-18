@@ -4,11 +4,10 @@ from pycocotools.coco import COCO
 
 
 class ExtractionToolkit:
-    def __init__(self, images_lookup_table=None, images_list=None, image_or_label=None, porco=None):
+    def __init__(self, images_lookup_table=None, ids_list=None, images_list=None, image_or_label=None):
 
         self.images_lookup_table = images_lookup_table
-        #self.ids_list = ids_listtt
-        self.porco=porco
+        self.ids_list = ids_list
         self.images_list = images_list # all'inizio è 'None'
         self.image_or_label = image_or_label
         
@@ -39,7 +38,7 @@ class ExtractionToolkit:
         self.images_list = waymo_list + bdd100k_list + argoverse_list
         print("Now the images are: {}".format(len(self.images_list)))
 
-        for id in [1,2]:#self.ids_list[:10]:
+        for id in self.ids_list[:10]:
             file_name = self.images_lookup_table[id]
             shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
             i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
