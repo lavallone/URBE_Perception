@@ -17,13 +17,13 @@ class ExtractionToolkit:
         bdd100k_list = []
         argoverse_list = []
         print("---------------------------------------------------------0")
-        for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"):
-            video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v+"/"
+        for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos"):
+            video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v
             print(video_folder)
             images_list = sorted(os.listdir(video_folder))
             print(images_list)
             for i in range(0,len(images_list), 6):
-                waymo_list = waymo_list + [video_folder+images_list[i], video_folder+images_list[i+1], video_folder+images_list[i+2]]
+                waymo_list = waymo_list + [video_folder+"/"+images_list[i], video_folder+"/"+images_list[i+1], video_folder+"/"+images_list[i+2]]
         print("--------------------------------------------------------1")
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"+v+"/"
