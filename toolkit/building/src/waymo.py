@@ -167,7 +167,7 @@ class WaymoToolKit:
             else:
                 print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
             self.assign_segment(segment)
-                
+            print(segment)
             t = threading.Thread(target=self.extract_camera_images)
             t.start()
             t.join()
