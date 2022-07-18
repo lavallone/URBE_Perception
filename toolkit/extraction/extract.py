@@ -4,10 +4,10 @@ from pycocotools.coco import COCO
 
 
 class ExtractionToolkit:
-    def __init__(self, images_lookup_table=None, ids_list=None, images_list=None, image_or_label=None):
+    def __init__(self, images_lookup_table=None, ids_listtt=None, images_list=None, image_or_label=None):
 
         self.images_lookup_table = images_lookup_table
-        self.ids_list = ids_list
+        self.ids_list = ids_listtt
         self.images_list = images_list # all'inizio è 'None'
         self.image_or_label = image_or_label
         
