@@ -16,39 +16,34 @@ class ExtractionToolkit:
         waymo_list = []
         bdd100k_list = []
         argoverse_list = []
-        print("---------------------------------------------------------0")
+        
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos"):
-            print(v)
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v
-            print(video_folder)
             images_list = sorted(os.listdir(video_folder))
-            print(images_list)
             for i in range(0,len(images_list), 6):
                 waymo_list = waymo_list + [video_folder+"/"+images_list[i], video_folder+"/"+images_list[i+1], video_folder+"/"+images_list[i+2]]
-        print("--------------------------------------------------------1")
+        
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
             for i in range(0, len(images_list), 2):
                 bdd100k_list.append(video_folder+images_list[i])
-        print("--------------------------------------------------------2")
+        
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
             for i in range(0, len(images_list), 3):
                 argoverse_list.append(video_folder+images_list[i])
-        print("--------------------------------------------------------3")
-        self.images_list = waymo_list + bdd100k_list + argoverse_list
-        #print("Now the images are: {}".format(len(self.images_list)))
         
-        #for id in self.ids_list[:10]:
-        #    file_name = self.images_lookup_table[id]
-        #    shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
-        #    i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
-        #    im = file_name[len(file_name)-i:]
-        #    print(im)
-        #    print(id)
-        #    os.rename("/content/drive/MyDrive/VISIOPE/Project/data/images/"+im, "/content/drive/MyDrive/VISIOPE/Project/data/images/"+id+".jpg")
+        self.images_list = waymo_list + bdd100k_list + argoverse_list
+        print("Now the images are: {}".format(len(self.images_list)))
+        
+        for id in self.ids_list[:10]:
+            file_name = self.images_lookup_table[id]
+            shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
+            i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
+            im = file_name[len(file_name)-i:]
+            os.rename("/content/drive/MyDrive/VISIOPE/Project/data/images/"+im, "/content/drive/MyDrive/VISIOPE/Project/data/images/"+id+".jpg")
         
         
     def extract_labels(self):
