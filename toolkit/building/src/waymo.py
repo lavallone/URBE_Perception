@@ -118,7 +118,7 @@ class WaymoToolKit:
                 os.makedirs(self.images_seg_dir)
             print("cleaning directory from previous images...")
             # clear images from previous executions
-            self.clean_directory(glob.glob('{}/**/*.png'.format(self.images_seg_dir), recursive=True))
+            self.clean_directory(glob.glob('{}/**/*.jpg'.format(self.images_seg_dir), recursive=True))
             print("Done!")
 
         # Convert tfrecord to a list
