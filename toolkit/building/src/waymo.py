@@ -55,15 +55,15 @@ class WaymoToolKit:
     # Extract Camera Image
     def extract_image(self, ndx, frame):
         if self.image_or_label == "image":
+            if 0 <= int(ndx) <= 9:
+                ndx = str(00) + str(ndx)
+            elif 10 <= int(ndx) <= 99:
+                ndx = str(0) + str(ndx)
             for data in frame.images:
                 decodedImage = tf.io.decode_jpeg(data.image, channels=3, dct_method='INTEGER_ACCURATE')
                 decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
-                if 0 <= int(ndx) <= 9:
-                    new_ndx = str(00) + str(ndx)
-                elif 10 <= int(ndx) <= 99:
-                    new_ndx = str(0) + str(ndx)
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                    cv2.imwrite("{}/{}_{}.jpg".format(self.images_seg_dir, new_ndx, self.camera_list[data.name]), decodedImage)
+                    cv2.imwrite("{}/{}_{}.jpg".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
         elif self.image_or_label == "label":
             l = []
             for data in frame.images:
