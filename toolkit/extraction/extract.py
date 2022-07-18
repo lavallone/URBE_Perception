@@ -16,28 +16,28 @@ class ExtractionToolkit:
         waymo_list = []
         bdd100k_list = []
         argoverse_list = []
-
+        print("0")
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
             for i in range(0,len(images_list), 6):
                 waymo_list = waymo_list + [video_folder+images_list[i], video_folder+images_list[i+1], video_folder+images_list[i+2]]
-
+        print("1")
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
             for i in range(0, len(images_list), 2):
                 bdd100k_list.append(video_folder+images_list[i])
-
+        print("2")
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
             for i in range(0, len(images_list), 3):
                 argoverse_list.append(video_folder+images_list[i])
-
+        print("3")
         self.images_list = waymo_list + bdd100k_list + argoverse_list
-        print("Now the images are: {}".format(len(self.images_list)))
-        print("ole")
+        #print("Now the images are: {}".format(len(self.images_list)))
+        
         #for id in self.ids_list[:10]:
         #    file_name = self.images_lookup_table[id]
         #    shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
