@@ -123,7 +123,7 @@ class WaymoToolKit:
 
         # Convert tfrecord to a list
         datasetAsList = list(self.dataset.as_numpy_iterator()) # lista dei frame relativi a un 'segment'
-        totalFrames = 1#len(datasetAsList)
+        totalFrames = len(datasetAsList)
         
         if self.image_or_label == "label": # NO MULTITHREADING
             frame = open_dataset.Frame()
@@ -167,12 +167,12 @@ class WaymoToolKit:
             else:
                 print("^^^^^^^^^^^^^^^^^^^^^^  Last segment to process ^^^^^^^^^^^^^^^^^^^^^^")
             self.assign_segment(segment)
-            print(segment)
+            
             t = threading.Thread(target=self.extract_camera_images)
             t.start()
             t.join()
                 
-            if iteration == 1:#000: # for controlling how many segments we're going to process
+            if iteration == 1000: # for controlling how many segments we're going to process
                 break 
             
         print("################# Processing is Finished ;) #################")
