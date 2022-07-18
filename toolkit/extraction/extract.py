@@ -18,6 +18,7 @@ class ExtractionToolkit:
         argoverse_list = []
         print("---------------------------------------------------------0")
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos"):
+            print(v)
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v
             print(video_folder)
             images_list = sorted(os.listdir(video_folder))
