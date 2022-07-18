@@ -42,7 +42,7 @@ class ExtractionToolkit:
             file_name = self.images_lookup_table[id]
             shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
             i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
-            im = file_name[len(file_name)-i]
+            im = file_name[len(file_name)-i:]
             os.rename("/content/drive/MyDrive/VISIOPE/Project/data/images/"+im, "/content/drive/MyDrive/VISIOPE/Project/data/images/"+id+".jpg")
         
         
