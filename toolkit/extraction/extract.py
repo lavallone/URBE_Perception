@@ -37,15 +37,15 @@ class ExtractionToolkit:
 
         self.images_list = waymo_list + bdd100k_list + argoverse_list
         print("Now the images are: {}".format(len(self.images_list)))
-
-        for id in self.ids_list[:10]:
-            file_name = self.images_lookup_table[id]
-            shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
-            i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
-            im = file_name[len(file_name)-i:]
-            print(im)
-            print(id)
-            os.rename("/content/drive/MyDrive/VISIOPE/Project/data/images/"+im, "/content/drive/MyDrive/VISIOPE/Project/data/images/"+id+".jpg")
+        print("ole")
+        #for id in self.ids_list[:10]:
+        #    file_name = self.images_lookup_table[id]
+        #    shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
+        #    i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
+        #    im = file_name[len(file_name)-i:]
+        #    print(im)
+        #    print(id)
+        #    os.rename("/content/drive/MyDrive/VISIOPE/Project/data/images/"+im, "/content/drive/MyDrive/VISIOPE/Project/data/images/"+id+".jpg")
         
         
     def extract_labels(self):
