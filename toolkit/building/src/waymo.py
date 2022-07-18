@@ -59,11 +59,11 @@ class WaymoToolKit:
                 decodedImage = tf.io.decode_jpeg(data.image, channels=3, dct_method='INTEGER_ACCURATE')
                 decodedImage = cv2.cvtColor(decodedImage.numpy(), cv2.COLOR_RGB2BGR)
                 if 0 <= int(ndx) <= 9:
-                    ndx = str(00) + str(ndx)
+                    new_ndx = str(00) + str(ndx)
                 elif 10 <= int(ndx) <= 99:
-                    ndx = str(0) + str(ndx)
+                    new_ndx = str(0) + str(ndx)
                 if self.camera_list[data.name]=="FRONT" or  self.camera_list[data.name]=="FRONT_LEFT" or self.camera_list[data.name]=="FRONT_RIGHT":
-                    cv2.imwrite("{}/{}_{}.jpg".format(self.images_seg_dir, ndx, self.camera_list[data.name]), decodedImage)
+                    cv2.imwrite("{}/{}_{}.jpg".format(self.images_seg_dir, new_ndx, self.camera_list[data.name]), decodedImage)
         elif self.image_or_label == "label":
             l = []
             for data in frame.images:
@@ -123,7 +123,7 @@ class WaymoToolKit:
 
         # Convert tfrecord to a list
         datasetAsList = list(self.dataset.as_numpy_iterator()) # lista dei frame relativi a un 'segment'
-        totalFrames = len(datasetAsList)
+        totalFrames = 1#len(datasetAsList)
         
         if self.image_or_label == "label": # NO MULTITHREADING
             frame = open_dataset.Frame()
@@ -172,7 +172,7 @@ class WaymoToolKit:
             t.start()
             t.join()
                 
-            if iteration == 1000: # for controlling how many segments we're going to process
+            if iteration == 1:#000: # for controlling how many segments we're going to process
                 break 
             
         print("################# Processing is Finished ;) #################")
