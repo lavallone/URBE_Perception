@@ -56,7 +56,7 @@ class WaymoToolKit:
     def extract_image(self, ndx, frame):
         if self.image_or_label == "image":
             if 0 <= int(ndx) <= 9:
-                ndx = str(00) + str(ndx)
+                ndx = str(0) + str(0)+ str(ndx)
             elif 10 <= int(ndx) <= 99:
                 ndx = str(0) + str(ndx)
             for data in frame.images:
