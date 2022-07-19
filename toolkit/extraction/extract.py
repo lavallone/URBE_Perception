@@ -13,6 +13,7 @@ class ExtractionToolkit:
         self.image_or_label = image_or_label
         
     def extract_images(self):
+        print("ollllllll")
         # first of all, we delete the previous images inside the folder
         for f in glob.glob('{}/*.jpg'.format("/content/drive/MyDrive/VISIOPE/Project/data/images"), recursive=True):
             os.remove(f)
