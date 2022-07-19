@@ -1,5 +1,6 @@
 import os
 import shutil
+import glob
 from pycocotools.coco import COCO
 
 
@@ -11,6 +12,10 @@ class ExtractionToolkit:
         self.image_or_label = image_or_label
         
     def extract_images(self):
+        # first of all, we delete the previous images inside the folder
+        for f in glob.glob('{}/**/*.jpg'.format("/content/drive/MyDrive/VISIOPE/Project/data/images"), recursive=True):
+            os.remove(f)
+        
         # we select images because many of them are similar (subsequent frame images)
         waymo_list = []
         bdd100k_list = []
