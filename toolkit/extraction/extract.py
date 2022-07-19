@@ -6,14 +6,13 @@ from pycocotools.coco import COCO
 
 
 class ExtractionToolkit:
-    def __init__(self, images_lookup_table=None, images_list=None, image_or_label=None):
+    def __init__(self, images_lookup_table=None, images_list=None):
 
         self.images_lookup_table = images_lookup_table
         self.images_list = images_list # all'inizio è 'None'
-        self.image_or_label = image_or_label
         
     def extract_images(self):
-        print("ollllllll")
+        #print("ollllllll")
         # first of all, we delete the previous images inside the folder
         for f in glob.glob('{}/*.jpg'.format("/content/drive/MyDrive/VISIOPE/Project/data/images"), recursive=True):
             os.remove(f)
@@ -80,9 +79,3 @@ class ExtractionToolkit:
         #    f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/"+id+".txt", "w")
         #    f.write('\n'.join(d[file_name]))
         #    f.close
-    
-    def extract(self):
-        if self.image_or_label == "image":
-            self.extract_images()
-        else:
-            self.extract_labels()
