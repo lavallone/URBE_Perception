@@ -32,13 +32,13 @@ class ExtractionToolkit:
             images_list = sorted(os.listdir(video_folder))
             for i in range(0, len(images_list), 2):
                 bdd100k_list.append(video_folder+images_list[i])
-        #print("ààààààààààààààààààààààààààààààà")
+                
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
             for i in range(0, len(images_list), 3):
                 argoverse_list.append(video_folder+images_list[i])
-        #print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
+                
         self.images_list = waymo_list + bdd100k_list + argoverse_list
         print("Now the images are: {}".format(len(self.images_list)))
         
