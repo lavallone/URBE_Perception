@@ -55,17 +55,20 @@ class ExtractionToolkit:
         coco_bdd100k = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/COCO/annotations.json")
         coco_argoverse = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/COCO/annotations.json")
         annotations = coco_waymo.dataset["annotations"] + coco_bdd100k.dataset["annotations"] + coco_argoverse.dataset["annotations"] 
-        d = []
+        #d = {}
         for file_name in self.images_list[:10]:
-            #id = self.images_lookup_table[file_name]
             value = list( map(lambda y: str(y["category_id"])+" "+str(y["bbox"][0]+" "+str(y["bbox"][1])+" "+str(y["bbox"][2]))+" "+str(y["bbox"][3]), list(filter(lambda x: x["file_name"]==file_name, annotations))) )
-            d.append({file_name : value})
-            
-        for file_name in self.images_list[:10]:
+            #d[file_name] = value
             id = self.images_lookup_table[file_name]
             f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/"+id+".txt", "w")
-            f.write('\n'.join(d[file_name]))
+            f.write('\n'.join(value))
             f.close
+            
+        #for file_name in self.images_list[:10]:
+        #    id = self.images_lookup_table[file_name]
+        #    f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/"+id+".txt", "w")
+        #    f.write('\n'.join(d[file_name]))
+        #    f.close
     
     def extract(self):
         if self.image_or_label == "image":
