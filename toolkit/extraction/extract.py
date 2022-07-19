@@ -52,11 +52,13 @@ class ExtractionToolkit:
         coco_argoverse = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/COCO/annotations.json")
         annotations = coco_waymo.dataset["annotations"] + coco_bdd100k.dataset["annotations"] + coco_argoverse.dataset["annotations"] 
         d = []
-        for file_name in self.images_list[:10]: # dovrò essere in grado di accederci 
+        for id in self.ids_list[:10]:
+            file_name = self.images_lookup_table[id]
             value = list( map(lambda y: str(y["category_id"])+" "+str(y["bbox"][0]+" "+str(y["bbox"][1])+" "+str(y["bbox"][2]))+" "+str(y["bbox"][3]), list(filter(lambda x: x["file_name"]==file_name, annotations))) )
             d.append({file_name : value})
             
-        for file_name in self.images_list[:10]:
+        for id in self.ids_list[:10]:
+            file_name = self.images_lookup_table[id]
             f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/"+self.images_lookup_table[file_name]+".txt", "w")
             f.write('\n'.join(d[file_name]))
             f.close
