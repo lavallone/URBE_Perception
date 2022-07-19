@@ -1,6 +1,7 @@
 import os
 import shutil
 import glob
+import random
 from pycocotools.coco import COCO
 
 
@@ -40,9 +41,10 @@ class ExtractionToolkit:
                 argoverse_list.append(video_folder+images_list[i])
                 
         self.images_list = waymo_list + bdd100k_list + argoverse_list
+        random.shuffle(self.images_list) # for shuffling the order of the images
         print("Now the images are: {}".format(len(self.images_list)))
         
-        for file_name in self.images_list[:10]:# mi sa non serve
+        for file_name in self.images_list[:10]:
             id = self.images_lookup_table[file_name]
             shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
             i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
@@ -54,10 +56,18 @@ class ExtractionToolkit:
         coco_waymo = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/labels/COCO/annotations.json")
         coco_bdd100k = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/COCO/annotations.json")
         coco_argoverse = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/COCO/annotations.json")
+        images = coco_waymo.dataset["images"] + coco_bdd100k.dataset["images"] + coco_argoverse.dataset["images"]
         annotations = coco_waymo.dataset["annotations"] + coco_bdd100k.dataset["annotations"] + coco_argoverse.dataset["annotations"] 
+        
+        image_ids_list = []
+        for file_name in self.images_list:
+            for im in images:
+                if im["file_name"] == file_name:
+                    image_ids_list.append(im["id"])
+                    break
         #d = {}
-        for file_name in self.images_list[:10]:
-            value = list( map(lambda y: str(y["category_id"])+" "+str(y["bbox"][0]+" "+str(y["bbox"][1])+" "+str(y["bbox"][2]))+" "+str(y["bbox"][3]), list(filter(lambda x: x["file_name"]==file_name, annotations))) )
+        for file_name, image_id in zip(self.images_list[:10], image_ids_list[:10]):
+            value = list( map(lambda y: str(y["category_id"])+" "+str(y["bbox"][0]+" "+str(y["bbox"][1])+" "+str(y["bbox"][2]))+" "+str(y["bbox"][3]), list(filter(lambda x: x["image_id"]==image_id, annotations))) )
             #d[file_name] = value
             id = self.images_lookup_table[file_name]
             f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/"+id+".txt", "w")
