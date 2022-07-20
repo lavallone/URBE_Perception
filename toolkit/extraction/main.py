@@ -42,9 +42,12 @@ if __name__=="__main__":
     images_lookup_table = None
     file_path = Path("/content/drive/MyDrive/VISIOPE/Project/data/images_lookup_table.json")
     if file_path.is_file(): # if the file exists
+        print("loading 'images_lookup_table'...")
         images_lookup_table = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/old_train.json"))
     else:
+        print("creating 'images_lookup_table'...")
         images_lookup_table = images_lookup_table_create()
+        print("Done!")
     toolkit = ExtractionToolkit(images_lookup_table=images_lookup_table)
     toolkit.extract_images()
     #toolkit.extract_labels()
