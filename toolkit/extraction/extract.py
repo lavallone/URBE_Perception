@@ -4,7 +4,7 @@ import random
 from PIL import Image
 import json
 from pycocotools.coco import COCO
-import tqdm
+from tqdm import tqdm
 
 def uniqueid():
     seed = 0 #random.getrandbits(20)
