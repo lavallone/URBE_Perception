@@ -20,9 +20,10 @@ def name_id(id, x):
     return name
 
 class ExtractionToolkit:
-    def __init__(self, images_lookup_table=None, images_list=None):
+    def __init__(self, file_images_lookup_table=None, image_ids_lookup_table=None, images_list=None):
 
-        self.images_lookup_table = images_lookup_table
+        self.file_images_lookup_table = file_images_lookup_table
+        self.image_ids_lookup_table = image_ids_lookup_table
         self.images_list = images_list # all'inizio è 'None'
         
     def extract_images(self):
@@ -66,7 +67,7 @@ class ExtractionToolkit:
         
         print("Saving the new images to 'data/images'...")
         for file_name in tqdm(self.images_list[:10]):
-            id = self.images_lookup_table[file_name]
+            id = self.file_images_lookup_table[file_name]
             name = name_id(id, 6)
             name += '.jpg'
             
@@ -95,7 +96,7 @@ class ExtractionToolkit:
             #for im in images:
                 #if im["file_name"] == file_name:
                     
-            id = self.images_lookup_table[file_name]
+            id = self.image_ids_lookup_table[file_name]
             id = name_id(id, 6)
             image_ids_list.append(im["id"])
             d["id"] = id
@@ -112,7 +113,7 @@ class ExtractionToolkit:
         for file_name,image_id in tqdm(zip(self.images_list[:10], image_ids_list[:10])):
             annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
             for ann in annot:
-                new_id = self.images_lookup_table[file_name]
+                new_id = self.image_ids_lookup_table[file_name]
                 new_id = name_id(new_id, 6)
                 ann["image_id"] = new_id
                 new_annotations["annotations"].append(ann)
