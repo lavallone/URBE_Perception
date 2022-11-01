@@ -67,14 +67,13 @@ class ExtractionToolkit:
         random.shuffle(self.images_list) # for shuffling the order of the images
         print("Now the images are: {}".format(len(self.images_list)))
         
-        print(self.images_list[:10])
         # creo anche la lista dei vecchi IDs
         self.old_ids_list = []
         for img in self.images_list:
             self.old_ids_list.append(self.img2oldID[img])
         
         print("Saving the new images to 'data/images'...")
-        for file_name in tqdm(self.images_list[:10]):
+        for file_name in tqdm(self.images_list[:100]):
             id = self.img2id[file_name]
             name = name_id(id, 6)
             name += '.jpg'
@@ -95,18 +94,18 @@ class ExtractionToolkit:
         
         new_annotations = {"info" : {"num_images" : 191723}, "images" : [], "annotations" : []}
         
-        print("Retrieving the old 'image_ids'...")
-        image_ids_list = []
+        print("Create new annotations for images...")
+        #image_ids_list = []
         for file_name in tqdm(self.images_list[:10]):
             d = {}
-            im = list(filter(lambda x: x["file_name"]==file_name, images))[0]
-            print(im)
+            im = list(filter(lambda x: x["id"]==self.old_ids_list[file_name], images))[0]
+            
             #for im in images:
                 #if im["file_name"] == file_name:
                     
-            id = self.image_ids_lookup_table[file_name]
+            id = self.img2id[file_name]
             id = name_id(id, 6)
-            image_ids_list.append(im["id"])
+            #image_ids_list.append(im["id"])
             d["id"] = id
             d["file_name"] = file_name
             d["width"] = 1280
@@ -118,10 +117,10 @@ class ExtractionToolkit:
         
         print("Saving the new annotations files to 'data/labels'...")
         #d = {}
-        for file_name,image_id in tqdm(zip(self.images_list[:10], image_ids_list[:10])):
+        for file_name,image_id in tqdm(zip(self.images_list[:10], self.old_ids_list[:10])):
             annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
             for ann in annot:
-                new_id = self.image_ids_lookup_table[file_name]
+                new_id = self.img2id[file_name]
                 new_id = name_id(new_id, 6)
                 ann["image_id"] = new_id
                 new_annotations["annotations"].append(ann)
@@ -130,11 +129,11 @@ class ExtractionToolkit:
         print("Total number of annotations: "+ len(new_annotations["annotations"]))
         
         # standardizziamo e unifichiamo gli ID delle annotazioni
-        print("Setting annotations IDs to be unique")
+        print("Setting annotations IDs to be unique!")
         id_generator = uniqueid()
         for ann in new_annotations["annotations"]:
             id = str(next(id_generator))
-            id = name_id(id, 6) # dobbiamo capire quante annotations per capire quanti zeri aggiungere!
+            id = name_id(id, 10) # dobbiamo capire quante annotations per capire quanti zeri aggiungere!
             ann["id"] = id
         
         print("Writing the 'annotations.json' file...")
