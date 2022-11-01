@@ -26,15 +26,24 @@ def lookup_tables_create():
   argoverse = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse"
 
   id_generator = uniqueid()
-  l = [waymo, bdd100k, argoverse]
   file_images_lookup_table = {}
-  for dir in l:
-    for v in os.listdir(dir+"/images/videos"):
-      video_folder = dir+"/images/videos/"+v
-      for im in os.listdir(video_folder):
-        file_image = video_folder + "/" + im
-        id = str(next(id_generator))
-        file_images_lookup_table[file_image] = id
+  img2oldID = {}
+  for im in images:
+    file_image = ""
+    if im["dataset"] == "waymo":
+      file_image = waymo + "/images/videos/" + im["file_name"]
+      img2oldID["file_image"] = im["id"]
+      id = str(next(id_generator))
+      file_images_lookup_table["file_image"] = id
+      
+  # for dir in l:
+  #   for v in os.listdir(dir+"/images/videos"):
+  #     video_folder = dir+"/images/videos/"+v
+  #     for im in os.listdir(video_folder):
+  #       file_image = video_folder + "/" + im
+  #       id = str(next(id_generator))
+  #       file_images_lookup_table[file_image] = id
+  
         
   id_generator = uniqueid()
   image_ids_lookup_table = {}
@@ -57,25 +66,24 @@ def lookup_tables_create():
 
 if __name__=="__main__":
     
-    file_images_lookup_table = None
-    image_ids_lookup_table = None
+    img2id = None
+    img2oldID = None
+    oldID2id = None
     file_path1 = Path("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json")
-    file_path2 = Path("/content/drive/MyDrive/VISIOPE/Project/data/old2newid.json")
-    if file_path1.is_file(): # if the file exists
-        print("loading 'img2id.json'...")
-        file_images_lookup_table = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json"))
-    else:
-        print("creating 'img2id.json'...")
-        file_images_lookup_table = lookup_tables_create()
+    file_path2 = Path("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json")
+    file_path3 = Path("/content/drive/MyDrive/VISIOPE/Project/data/oldID2id.json")
+    
+    if file_path1.is_file(): # all the files exist
+        print("loading the lookup tables...")
+        img2id = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json"))
+        img2oldID = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json"))
+        oldID2id = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/oldID2id.json"))
         print("Done!")
-    if file_path2.is_file(): # if the file exists
-        print("loading 'old2newid.json'...")
-        image_ids_lookup_table = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/old2newid.json"))
-    else:
-        print("creating 'old2newid.json'...")
-        image_ids_lookup_table = lookup_tables_create()
+    else: # ne basta uno non caricato
+        print("creating the lookup tables...")
+        img2id, img2oldID, oldID2id = lookup_tables_create()
         print("Done!")
-        
-    toolkit = ExtractionToolkit(file_images_lookup_table=file_images_lookup_table, image_ids_lookup_table=image_ids_lookup_table)
-    toolkit.extract_images()
+    
+    toolkit = ExtractionToolkit(img2id=img2id, img2oldID=img2oldID, oldID2id=oldID2id)
+    #toolkit.extract_images()
     #toolkit.extract_labels()

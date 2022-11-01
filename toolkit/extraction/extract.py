@@ -20,11 +20,12 @@ def name_id(id, x):
     return name
 
 class ExtractionToolkit:
-    def __init__(self, file_images_lookup_table=None, image_ids_lookup_table=None, images_list=None):
+    def __init__(self, file_images_lookup_table=None, image_ids_lookup_table=None, images_list=None, old_ids_list=None):
 
         self.file_images_lookup_table = file_images_lookup_table
         self.image_ids_lookup_table = image_ids_lookup_table
         self.images_list = images_list # all'inizio è 'None'
+        self.old_ids_list = old_ids_list # all'inizio è 'None'
         
     def extract_images(self):
         print("Starting extracting images...")
