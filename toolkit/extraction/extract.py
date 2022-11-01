@@ -68,6 +68,7 @@ class ExtractionToolkit:
         print("Now the images are: {}".format(len(self.images_list)))
         
         # creo anche la lista dei vecchi IDs
+        self.old_ids_list = []
         for img in self.images_list:
             self.old_ids_list.append(self.img2oldID[img])
         
