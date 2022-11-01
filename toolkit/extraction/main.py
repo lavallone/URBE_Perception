@@ -26,15 +26,21 @@ def lookup_tables_create():
   argoverse = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse"
 
   id_generator = uniqueid()
-  file_images_lookup_table = {}
+  img2id = {}
   img2oldID = {}
   for im in images:
-    file_image = ""
+    prefix = ""
     if im["dataset"] == "waymo":
-      file_image = waymo + "/images/videos/" + im["file_name"]
-      img2oldID["file_image"] = im["id"]
-      id = str(next(id_generator))
-      file_images_lookup_table["file_image"] = id
+      prefix = waymo
+    elif im["dataset"] == "bdd100k":
+      prefix = bdd100k
+    elif im["dataset"] == "argoverse":
+      prefix = argoverse
+    file_image = prefix + "/images/videos/" + im["file_name"]
+    
+    img2oldID[file_image] = im["id"]
+    id = str(next(id_generator))
+    img2id[file_image] = id
       
   # for dir in l:
   #   for v in os.listdir(dir+"/images/videos"):
@@ -46,23 +52,27 @@ def lookup_tables_create():
   
         
   id_generator = uniqueid()
-  image_ids_lookup_table = {}
+  oldID2id = {}
   for old_id in tqdm(old_image_ids):
     id = str(next(id_generator))
-    image_ids_lookup_table[old_id] = id
+    oldID2id[old_id] = id
 
-  print(len(file_images_lookup_table.keys()))
-  print(len(image_ids_lookup_table.keys()))
+  print(len(img2id.keys()))
+  print(len(img2oldID.keys()))
+  print(len(oldID2id.keys()))
 
   # We also write it in a json file for future uses.
   f = open("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json", "w")
-  json.dump(file_images_lookup_table, f)
+  json.dump(img2id, f)
   f.close()
-  f = open("/content/drive/MyDrive/VISIOPE/Project/data/old2newid.json", "w")
-  json.dump(image_ids_lookup_table, f)
+  f = open("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json", "w")
+  json.dump(img2oldID, f)
+  f.close()
+  f = open("/content/drive/MyDrive/VISIOPE/Project/data/oldID2id.json", "w")
+  json.dump(oldID2id, f)
   f.close()
 
-  return file_images_lookup_table, image_ids_lookup_table
+  return img2id, img2oldID, oldID2id
 
 if __name__=="__main__":
     
