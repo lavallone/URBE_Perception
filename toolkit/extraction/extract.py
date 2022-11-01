@@ -127,7 +127,7 @@ class ExtractionToolkit:
         print("Done!")
         
         # number of annotations
-        print("Total number of annotations: "+ len(new_annotations["annotations"]))
+        print("Total number of annotations: " + str(len(new_annotations["annotations"])))
         
         # standardizziamo e unifichiamo gli ID delle annotazioni
         print("Setting annotations IDs to be unique!")
