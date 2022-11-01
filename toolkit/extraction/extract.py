@@ -32,10 +32,10 @@ class ExtractionToolkit:
         print("Starting extracting images...")
         
         # first of all, we delete the previous images inside the folder
-        # print("Deleting the previous images...")
-        # for f in glob.glob('{}/*.jpg'.format("/content/drive/MyDrive/VISIOPE/Project/data/images"), recursive=True):
-        #     os.remove(f)
-        # print("Done!")
+        print("Deleting the previous images...")
+        for f in glob.glob('{}/*.jpg'.format("/content/drive/MyDrive/VISIOPE/Project/data/images"), recursive=True):
+            os.remove(f)
+        print("Done!")
         
         # we select images because many of them are similar (subsequent frame images)
         waymo_list = []
@@ -46,21 +46,21 @@ class ExtractionToolkit:
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v
             images_list = sorted(os.listdir(video_folder))
-            for i in range(0,len(images_list), 6):
+            for i in range(0,len(images_list), 9):
                 waymo_list = waymo_list + [video_folder+"/"+images_list[i], video_folder+"/"+images_list[i+1], video_folder+"/"+images_list[i+2]]
         
         print("Processing BDD100K images...")
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
-            for i in range(0, len(images_list), 2):
+            for i in range(0, len(images_list), 3):
                 bdd100k_list.append(video_folder+images_list[i])
                 
         print("Processing Argoverse images...")
         for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"):
             video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"+v+"/"
             images_list = sorted(os.listdir(video_folder))
-            for i in range(0, len(images_list), 3):
+            for i in range(0, len(images_list), 6):
                 argoverse_list.append(video_folder+images_list[i])
                 
         self.images_list = waymo_list + bdd100k_list + argoverse_list
