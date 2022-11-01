@@ -23,11 +23,11 @@ def add_timeofday():
   print("Done!")
   return timeofday_list
 
-def clean_json(coco_train, coco_val, d, lookup_video):
+def clean_json(coco_train, coco_val, d, train_lookup_video, val_lookup_video):
     d["categories"] = [{"name" : "vehicle", "id" : 0}, {"name" : "person", "id" : 1}, {"name" : "motorbike", "id" : 2}]
     
     for img in coco_train.dataset["images"]:
-        img["video_id"] = lookup_video[img["sid"]]
+        img["video_id"] = train_lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
         img["dataset"] = "argoverse"
         img["timeofday"] = None
@@ -39,7 +39,7 @@ def clean_json(coco_train, coco_val, d, lookup_video):
     for img in coco_val.dataset["images"]:
         img["id"] = img["id"] + start_id
         start_id = start_id + 1
-        img["video_id"] = lookup_video[img["sid"]]
+        img["video_id"] = val_lookup_video[img["sid"]]
         img["file_name"] = img["video_id"] + "/" + img["name"]
         img["dataset"] = "argoverse"
         img["timeofday"] = None
@@ -118,21 +118,27 @@ if __name__=="__main__":
         d = {}
         coco_train = COCO(old_train_labels_json)
         coco_val = COCO(old_val_labels_json)
-        list_videos = coco_train.dataset["sequences"] 
-        list_videos = list_videos + coco_val.dataset["sequences"]
+        train_videos = coco_train.dataset["sequences"] 
+        val_videos = coco_val.dataset["sequences"]
         d["info"] = coco_train.dataset["info"]
         #d["videos"] = []
-        lookup_video = {}
-        for i, name_video in enumerate(list_videos):
-            lookup_video[i] = name_video
+        train_lookup_video = {}
+        for i,name_video in enumerate(train_videos):
+            train_lookup_video[i] = name_video
             totalFrames = 0
             for f in os.listdir(images_dir+"/"+name_video):
                 totalFrames = totalFrames + 1
             #d["videos"].append({"id" : name_video, "num_frames" : totalFrames, "time" : None})
+        val_lookup_video = {}
+        for i,name_video in enumerate(val_videos):
+            val_lookup_video[i] = name_video
+            totalFrames = 0
+            for f in os.listdir(images_dir+"/"+name_video):
+                totalFrames = totalFrames + 1
         
         # Ora che abbiamo agggiunto la sezione dei video al file 'json', possiamo iniziare a pulirlo un po'...
         print("cleaning 'old_train.json' and 'old_val.json'...") 
-        clean_json(coco_train, coco_val, d, lookup_video)
+        clean_json(coco_train, coco_val, d, train_lookup_video, val_lookup_video)
         print("Done!")
         print("copying to 'annotations.json'...")
         json.dump(d, open(labels_json, "w"))
