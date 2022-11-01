@@ -32,10 +32,10 @@ class ExtractionToolkit:
         print("Starting extracting images...")
         
         # first of all, we delete the previous images inside the folder
-        print("Deleting the previous images...")
-        for f in glob.glob('{}/*.jpg'.format("/content/drive/MyDrive/VISIOPE/Project/data/images"), recursive=True):
-            os.remove(f)
-        print("Done!")
+        # print("Deleting the previous images...")
+        # for f in glob.glob('{}/*.jpg'.format("/content/drive/MyDrive/VISIOPE/Project/data/images"), recursive=True):
+        #     os.remove(f)
+        # print("Done!")
         
         # we select images because many of them are similar (subsequent frame images)
         waymo_list = []
@@ -66,23 +66,28 @@ class ExtractionToolkit:
         self.images_list = waymo_list + bdd100k_list + argoverse_list
         random.shuffle(self.images_list) # for shuffling the order of the images
         print("Now the images are: {}".format(len(self.images_list)))
+        # we save  the list for future purposes
+        f = open("/content/drive/MyDrive/VISIOPE/Project/data/images_list.json", "w")
+        d = {"images_list" : self.images_list}
+        json.dump(d, f)
+        f.close()
         
         # creo anche la lista dei vecchi IDs
         self.old_ids_list = []
         for img in self.images_list:
             self.old_ids_list.append(self.img2oldID[img])
         
-        print("Saving the new images to 'data/images'...")
-        for file_name in tqdm(self.images_list):
-            id = self.img2id[file_name]
-            name = name_id(id, 6)
-            name += '.jpg'
+        # print("Saving the new images to 'data/images'...")
+        # for file_name in tqdm(self.images_list):
+        #     id = self.img2id[file_name]
+        #     name = name_id(id, 6)
+        #     name += '.jpg'
             
-            im = Image.open(file_name)
-            resized_im = im.resize((1280, 720))
-            final_im = resized_im.convert("RGB")
-            final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
-        print("Done!")
+        #     im = Image.open(file_name)
+        #     resized_im = im.resize((1280, 720))
+        #     final_im = resized_im.convert("RGB")
+        #     final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
+        # print("Done!")
         
     def extract_labels(self):
         print("Starting extracting labels...")
