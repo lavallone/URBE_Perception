@@ -131,7 +131,7 @@ class ExtractionToolkit:
         print("Done!")
         
         print("Writing the 'annotations.json' file...")
-        f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/annotations.json", "w")
+        f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json", "w")
         json.dump(new_annotations, f)
         f.close()
         print("Done!")
