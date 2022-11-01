@@ -67,6 +67,7 @@ class ExtractionToolkit:
         random.shuffle(self.images_list) # for shuffling the order of the images
         print("Now the images are: {}".format(len(self.images_list)))
         
+        print(self.images_list[:10])
         # creo anche la lista dei vecchi IDs
         self.old_ids_list = []
         for img in self.images_list:
