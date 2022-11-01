@@ -1,10 +1,23 @@
 import os
-import shutil
 import glob
 import random
 from PIL import Image
+import json
 from pycocotools.coco import COCO
+import tqdm
 
+def uniqueid():
+    seed = 0 #random.getrandbits(20)
+    while True:
+       yield seed
+       seed += 1
+
+def name_id(id, x):
+    n = len(id)
+    name = id
+    for _ in range(x-n):
+        name = '0' + name
+    return name
 
 class ExtractionToolkit:
     def __init__(self, images_lookup_table=None, images_list=None):
@@ -52,52 +65,68 @@ class ExtractionToolkit:
         print("Now the images are: {}".format(len(self.images_list)))
         
         print("Saving the new images to 'data/images'...")
-        for file_name in self.images_list:
+        for file_name in tqdm(self.images_list[:10]):
             id = self.images_lookup_table[file_name]
-            n = len(id)
-            name = id
-            for _ in range(6-n):
-                name = '0' + name
+            name = name_id(id, 6)
             name += '.jpg'
             
             im = Image.open(file_name)
             resized_im = im.resize((1280, 720))
             final_im = resized_im.convert("RGB")
             final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
-            
         print("Done!")
         
     def extract_labels(self):
-        print("Starting extracting images...")
+        print("Starting extracting labels...")
         coco_waymo = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/labels/COCO/annotations.json")
         coco_bdd100k = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/labels/COCO/annotations.json")
         coco_argoverse = COCO("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/COCO/annotations.json")
         images = coco_waymo.dataset["images"] + coco_bdd100k.dataset["images"] + coco_argoverse.dataset["images"]
         annotations = coco_waymo.dataset["annotations"] + coco_bdd100k.dataset["annotations"] + coco_argoverse.dataset["annotations"] 
         
-        print("Retrieving the 'image_ids'...")
+        new_annotations = {"info" : {"num_images" : 191723}, "images" : [], "annotations" : []}
+        
+        print("Retrieving the old 'image_ids'...")
         image_ids_list = []
-        for file_name in self.images_list:
-            for im in images:
-                if im["file_name"] == file_name:
-                    image_ids_list.append(im["id"])
-                    break
+        for file_name in self.images_list[:10]:
+            d = {}
+            im = list(filter(lambda x: x["file_name"]==file_name, images))[0]
+            #for im in images:
+                #if im["file_name"] == file_name:
+                    
+            id = self.images_lookup_table[file_name]
+            id = name_id(id, 6)
+            image_ids_list.append(im["id"])
+            d["id"] = id
+            d["file_name"] = file_name
+            d["width"] = 1280
+            d["height"] = 720
+            d["timeofday"] = im["timeofday"]
+            new_annotations["images"].append(d)
+            #break
         print("Done!")
         
         print("Saving the new annotations files to 'data/labels'...")
         #d = {}
-        for file_name, image_id in zip(self.images_list[:10], image_ids_list[:10]):
-            value = list( map(lambda y: str(y["category_id"])+" "+str(y["bbox"][0]+" "+str(y["bbox"][1])+" "+str(y["bbox"][2]))+" "+str(y["bbox"][3]), list(filter(lambda x: x["image_id"]==image_id, annotations))) )
-            #d[file_name] = value
-            id = self.images_lookup_table[file_name]
-            f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/"+id+".txt", "w")
-            f.write('\n'.join(value))
-            f.close
+        for file_name,image_id in zip(self.images_list[:10], image_ids_list[:10]):
+            annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
+            for ann in annot:
+                new_id = self.images_lookup_table[file_name]
+                new_id = name_id(new_id, 6)
+                ann["image_id"] = new_id
+                new_annotations["annotations"].append(ann)
+        
+        # number of annotations
+        print("Total number of annotations: "+ len(new_annotations["annotations"]))
+        
+        # standardizziamo e unifichiamo gli ID delle annotazioni
+        id_generator = uniqueid()
+        for ann in new_annotations["annotations"]:
+            id = str(next(id_generator))
+            id = name_id(id, 6) # dobbiamo capire quante annotations per capire quanti zeri aggiungere!
+            ann["id"] = id
+        
+        f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/annotations.json", "w")
+        json.dump(new_annotations, f)
+        f.close()
         print("Done!")
-
-            
-        #for file_name in self.images_list[:10]:
-        #    id = self.images_lookup_table[file_name]
-        #    f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/"+id+".txt", "w")
-        #    f.write('\n'.join(d[file_name]))
-        #    f.close

@@ -4,7 +4,7 @@ from pathlib import Path
 from extract import ExtractionToolkit
 
 def uniqueid():
-    seed = 0 #random.getrandbits(20)
+    seed = 0 # random.getrandbits(20)
     while True:
        yield seed
        seed += 1
@@ -50,4 +50,4 @@ if __name__=="__main__":
         print("Done!")
     toolkit = ExtractionToolkit(images_lookup_table=images_lookup_table)
     toolkit.extract_images()
-    #toolkit.extract_labels()
+    toolkit.extract_labels()
