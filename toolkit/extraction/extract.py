@@ -88,9 +88,10 @@ class ExtractionToolkit:
         
         print("Retrieving the old 'image_ids'...")
         image_ids_list = []
-        for file_name in self.images_list[:10]:
+        for file_name in tqdm(self.images_list[:10]):
             d = {}
-            im = list(filter(lambda x: x["file_name"]==file_name, images))[0]
+            im = list(filter(lambda x: x["file_name"]==file_name, images))
+            print(im)
             #for im in images:
                 #if im["file_name"] == file_name:
                     
@@ -108,7 +109,7 @@ class ExtractionToolkit:
         
         print("Saving the new annotations files to 'data/labels'...")
         #d = {}
-        for file_name,image_id in zip(self.images_list[:10], image_ids_list[:10]):
+        for file_name,image_id in tqdm(zip(self.images_list[:10], image_ids_list[:10])):
             annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
             for ann in annot:
                 new_id = self.images_lookup_table[file_name]
@@ -120,12 +121,14 @@ class ExtractionToolkit:
         print("Total number of annotations: "+ len(new_annotations["annotations"]))
         
         # standardizziamo e unifichiamo gli ID delle annotazioni
+        print("Setting annotations IDs to be unique")
         id_generator = uniqueid()
         for ann in new_annotations["annotations"]:
             id = str(next(id_generator))
             id = name_id(id, 6) # dobbiamo capire quante annotations per capire quanti zeri aggiungere!
             ann["id"] = id
         
+        print("Writing the 'annotations.json' file...")
         f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/annotations.json", "w")
         json.dump(new_annotations, f)
         f.close()
