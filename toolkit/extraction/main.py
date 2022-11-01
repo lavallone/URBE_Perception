@@ -73,7 +73,7 @@ if __name__=="__main__":
     file_path2 = Path("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json")
     file_path3 = Path("/content/drive/MyDrive/VISIOPE/Project/data/oldID2id.json")
     
-    if file_path1.is_file(): # all the files exist
+    if file_path1.is_file() and file_path2.is_file() and file_path3.is_file(): # all the files exist
         print("loading the lookup tables...")
         img2id = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json"))
         img2oldID = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json"))
