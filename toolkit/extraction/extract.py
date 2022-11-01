@@ -73,7 +73,7 @@ class ExtractionToolkit:
             self.old_ids_list.append(self.img2oldID[img])
         
         print("Saving the new images to 'data/images'...")
-        for file_name in tqdm(self.images_list[:100]):
+        for file_name in tqdm(self.images_list[:5]):
             id = self.img2id[file_name]
             name = name_id(id, 6)
             name += '.jpg'
@@ -96,9 +96,9 @@ class ExtractionToolkit:
         
         print("Create new annotations for images...")
         #image_ids_list = []
-        for file_name in tqdm(self.images_list[:10]):
+        for file_name in tqdm(self.images_list[:5]):
             d = {}
-            im = list(filter(lambda x: x["id"]==self.old_ids_list[file_name], images))
+            im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], images))
             print(im)
             #for im in images:
                 #if im["file_name"] == file_name:
@@ -117,13 +117,14 @@ class ExtractionToolkit:
         
         print("Saving the new annotations files to 'data/labels'...")
         #d = {}
-        for file_name,image_id in tqdm(zip(self.images_list[:10], self.old_ids_list[:10])):
+        for file_name,image_id in tqdm(zip(self.images_list[:5], self.old_ids_list[:5])):
             annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
             for ann in annot:
                 new_id = self.img2id[file_name]
                 new_id = name_id(new_id, 6)
                 ann["image_id"] = new_id
                 new_annotations["annotations"].append(ann)
+        print("Done!")
         
         # number of annotations
         print("Total number of annotations: "+ len(new_annotations["annotations"]))
