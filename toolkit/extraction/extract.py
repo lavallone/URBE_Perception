@@ -89,10 +89,8 @@ class ExtractionToolkit:
         print("Retrieving the old 'image_ids'...")
         image_ids_list = []
         for file_name in tqdm(self.images_list[:10]):
-            print(images[:10])
-            break
             d = {}
-            im = list(filter(lambda x: x["file_name"]==file_name, images))
+            im = list(filter(lambda x: x["file_name"]==file_name, images))[0]
             print(im)
             #for im in images:
                 #if im["file_name"] == file_name:
