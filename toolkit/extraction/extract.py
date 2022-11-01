@@ -2,6 +2,7 @@ import os
 import shutil
 import glob
 import random
+from PIL import Image
 from pycocotools.coco import COCO
 
 
@@ -51,13 +52,19 @@ class ExtractionToolkit:
         print("Now the images are: {}".format(len(self.images_list)))
         
         print("Saving the new images to 'data/images'...")
-        for file_name in self.images_list[:10]:
-            id = self.images_lookup_table[file_name]
-            shutil.copy(file_name,"/content/drive/MyDrive/VISIOPE/Project/data/images")
-            i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
-            im = file_name[len(file_name)-i:]
-            os.rename("/content/drive/MyDrive/VISIOPE/Project/data/images/"+im, "/content/drive/MyDrive/VISIOPE/Project/data/images/"+id+".jpg")
-        print("Done!")
+        # for file_name in self.images_list[:10]:
+        #     id = self.images_lookup_table[file_name]
+
+        #     im = Image.open(file_name)
+        #     resized_im = im.resize((1280, 720))
+        #     final_im = resized_im.convert("RGB")
+        #     final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images'+ myimage_500.jpg)
+
+        #     #shutil.copy(file_name, "/content/drive/MyDrive/VISIOPE/Project/data/images")
+        #     i = [i for i,c in enumerate(file_name[::-1]) if c=="/"][0]
+        #     im = file_name[len(file_name)-i:]
+        #     os.rename("/content/drive/MyDrive/VISIOPE/Project/data/images/"+im, "/content/drive/MyDrive/VISIOPE/Project/data/images/"+id+".jpg")
+        # print("Done!")
         
     def extract_labels(self):
         print("Starting extracting images...")
