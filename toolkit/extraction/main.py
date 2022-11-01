@@ -40,10 +40,10 @@ def images_lookup_table_create():
 if __name__=="__main__":
     
     images_lookup_table = None
-    file_path = Path("/content/drive/MyDrive/VISIOPE/Project/data/images_lookup_table.json")
-    if False:#file_path.is_file(): # if the file exists
+    file_path = Path("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json")
+    if file_path.is_file(): # if the file exists
         print("loading 'images_lookup_table'...")
-        images_lookup_table = json.load(open("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/labels/old_train.json"))
+        images_lookup_table = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json"))
     else:
         print("creating 'images_lookup_table'...")
         images_lookup_table = images_lookup_table_create()
