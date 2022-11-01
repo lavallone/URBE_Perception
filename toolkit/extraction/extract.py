@@ -7,7 +7,7 @@ from pycocotools.coco import COCO
 from tqdm import tqdm
 
 def uniqueid():
-    seed = 0 #random.getrandbits(20)
+    seed = 0
     while True:
        yield seed
        seed += 1
@@ -73,7 +73,7 @@ class ExtractionToolkit:
             self.old_ids_list.append(self.img2oldID[img])
         
         print("Saving the new images to 'data/images'...")
-        for file_name in tqdm(self.images_list[:5]):
+        for file_name in tqdm(self.images_list):
             id = self.img2id[file_name]
             name = name_id(id, 6)
             name += '.jpg'
@@ -95,29 +95,21 @@ class ExtractionToolkit:
         new_annotations = {"info" : {"num_images" : 191723}, "images" : [], "annotations" : []}
         
         print("Create new annotations for images...")
-        #image_ids_list = []
-        for file_name in tqdm(self.images_list[:5]):
+        for file_name in tqdm(self.images_list):
             d = {}
-            im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], images))[0]
-            
-            #for im in images:
-                #if im["file_name"] == file_name:
-                    
+            im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], images))[0]       
             id = self.img2id[file_name]
             id = name_id(id, 6)
-            #image_ids_list.append(im["id"])
             d["id"] = id
             d["file_name"] = file_name
             d["width"] = 1280
             d["height"] = 720
             d["timeofday"] = im["timeofday"]
             new_annotations["images"].append(d)
-            #break
         print("Done!")
         
         print("Saving the new annotations files to 'data/labels'...")
-        #d = {}
-        for file_name,image_id in tqdm(zip(self.images_list[:5], self.old_ids_list[:5])):
+        for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
             annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
             for ann in annot:
                 new_id = self.img2id[file_name]
@@ -134,8 +126,9 @@ class ExtractionToolkit:
         id_generator = uniqueid()
         for ann in new_annotations["annotations"]:
             id = str(next(id_generator))
-            id = name_id(id, 10) # dobbiamo capire quante annotations per capire quanti zeri aggiungere!
+            id = name_id(id, 8)
             ann["id"] = id
+        print("Done!")
         
         print("Writing the 'annotations.json' file...")
         f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/annotations.json", "w")

@@ -41,15 +41,6 @@ def lookup_tables_create():
     img2oldID[file_image] = im["id"]
     id = str(next(id_generator))
     img2id[file_image] = id
-      
-  # for dir in l:
-  #   for v in os.listdir(dir+"/images/videos"):
-  #     video_folder = dir+"/images/videos/"+v
-  #     for im in os.listdir(video_folder):
-  #       file_image = video_folder + "/" + im
-  #       id = str(next(id_generator))
-  #       file_images_lookup_table[file_image] = id
-  
         
   id_generator = uniqueid()
   oldID2id = {}
