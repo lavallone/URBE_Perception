@@ -20,10 +20,11 @@ def name_id(id, x):
     return name
 
 class ExtractionToolkit:
-    def __init__(self, file_images_lookup_table=None, image_ids_lookup_table=None, images_list=None, old_ids_list=None):
+    def __init__(self, img2id=None, img2oldID=None, oldID2id=None, images_list=None, old_ids_list=None):
 
-        self.file_images_lookup_table = file_images_lookup_table
-        self.image_ids_lookup_table = image_ids_lookup_table
+        self.img2id = img2id
+        self.img2oldID = img2oldID
+        self.oldID2id = oldID2id
         self.images_list = images_list # all'inizio è 'None'
         self.old_ids_list = old_ids_list # all'inizio è 'None'
         
@@ -66,9 +67,13 @@ class ExtractionToolkit:
         random.shuffle(self.images_list) # for shuffling the order of the images
         print("Now the images are: {}".format(len(self.images_list)))
         
+        # creo anche la lista dei vecchi IDs
+        for img in self.images_list:
+            self.old_ids_list.append(self.img2oldID[img])
+        
         print("Saving the new images to 'data/images'...")
         for file_name in tqdm(self.images_list[:10]):
-            id = self.file_images_lookup_table[file_name]
+            id = self.img2id[file_name]
             name = name_id(id, 6)
             name += '.jpg'
             
