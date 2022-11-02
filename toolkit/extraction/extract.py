@@ -114,7 +114,6 @@ class ExtractionToolkit:
         
         print("Create new annotations...")
         id_generator = uniqueid()
-        step=0
         for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
             #--------------------------------------------------------------------------#
             step += 1
@@ -139,6 +138,7 @@ class ExtractionToolkit:
                 ann["id"] = new_id
                 new_annotations["annotations"].append(ann)
             self.processed_images_so_far["images_so_far"].append((step, file_name))
+            #--------------------------------------------------------------------------#
             if step%500 == 0: # save the processed images
                 f = open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json", "w")
                 json.dump(self.processed_images_so_far, f)
@@ -171,8 +171,8 @@ class ExtractionToolkit:
         #     ann["id"] = id
         # print("Done!")
         
-        # print("Writing the 'annotations.json' file...")
-        # f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json", "w")
-        # json.dump(new_annotations, f)
-        # f.close()
-        # print("Done!")
+        print("Writing the 'annotations.json' file...")
+        f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json", "w")
+        json.dump(new_annotations, f)
+        f.close()
+        print("Done!")
