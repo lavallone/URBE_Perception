@@ -108,9 +108,10 @@ class ExtractionToolkit:
         
         self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
         
-        step = self.processed_images_so_far["images_so_far"][-1][0]
-        self.images_list = self.images_list[step:]
-        self.old_ids_list = self.old_ids_list[step:]
+        #step = self.processed_images_so_far["images_so_far"][-1][0]
+        step=0
+        #self.images_list = self.images_list[step:]
+        #self.old_ids_list = self.old_ids_list[step:]
         
         print("Create new annotations...")
         id_generator = uniqueid()
