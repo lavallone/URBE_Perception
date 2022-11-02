@@ -158,9 +158,12 @@ class ExtractionToolkit:
                 ann["id"] = new_id
                 new_annotations["annotations"].append(ann)
             self.processed_images_so_far["images_so_far"].append((step, file_name))
-            if step%500: # save the processed images
+            if step%500 == 0: # save the processed images
                 f = open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json", "w")
                 json.dump(self.processed_images_so_far, f)
+                f.close()
+                f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json", "w")
+                json.dump(new_annotations, f)
                 f.close()
             
         print("Done!")
@@ -187,8 +190,8 @@ class ExtractionToolkit:
         #     ann["id"] = id
         # print("Done!")
         
-        print("Writing the 'annotations.json' file...")
-        f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json", "w")
-        json.dump(new_annotations, f)
-        f.close()
-        print("Done!")
+        # print("Writing the 'annotations.json' file...")
+        # f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json", "w")
+        # json.dump(new_annotations, f)
+        # f.close()
+        # print("Done!")
