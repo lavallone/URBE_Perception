@@ -106,30 +106,11 @@ class ExtractionToolkit:
         # loading the new annotations file
         new_annotations = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json"))
         
-        #self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
+        self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
         
-        # # cleaning
-        # print("start cleaning...")
-        # print(len(self.processed_images_so_far["images_so_far"]))
-        # print(len(new_annotations["annotations"]))
-        # step=0
-        # self.processed_images_so_far["images_so_far"].reverse()
-        # for s,i in self.processed_images_so_far["images_so_far"].reverse():
-        #     if s%500 == 0:
-        #         step=s
-        #         break
-        #     self.processed_images_so_far["images_so_far"].reverse().remove((s,i))
-        #     # devo rimuovere  pure le annotations in new_annotations
-        #     id = self.img2id[i]
-        #     annotations = list(filter(lambda x: x["id"]==id, new_annotations["annotations"]))
-        #     for a in annotations:
-        #         new_annotations["annotations"].remove(a)
-        # self.processed_images_so_far["images_so_far"].reverse()
-        # print("Done!")
-        # print(len(self.processed_images_so_far["images_so_far"]))
-        # print(self.processed_images_so_far["images_so_far"])
-        # print(len(new_annotations["annotations"]))
-        
+        step = self.processed_images_so_far["images_so_far"].reverse()[1][0]
+        self.images_list = self.images_list[step+1:]
+        self.old_ids_list = self.old_ids_list[step+1:]
         
         print("Create new annotations...")
         id_generator = uniqueid()
