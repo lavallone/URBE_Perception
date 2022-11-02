@@ -99,8 +99,10 @@ class ExtractionToolkit:
         
         new_annotations = {"info" : {"num_images" : 191723}, "images" : [], "annotations" : []}
         
-        print("Create new annotations for images...")
-        for file_name in tqdm(self.images_list):
+        print("Create new annotations...")
+        id_generator = uniqueid()
+        for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
+            #--------------------------------------------------------------------------#
             d = {}
             im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], images))[0]       
             id = self.img2id[file_name]
@@ -111,29 +113,40 @@ class ExtractionToolkit:
             d["height"] = 720
             d["timeofday"] = im["timeofday"]
             new_annotations["images"].append(d)
-        print("Done!")
-        
-        print("Saving the new annotations files to 'data/labels'...")
-        for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
+            #--------------------------------------------------------------------------#
             annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
             for ann in annot:
-                new_id = self.img2id[file_name]
-                new_id = name_id(new_id, 6)
-                ann["image_id"] = new_id
+                new_image_id = self.img2id[file_name]
+                new_image_id = name_id(new_image_id, 6)
+                ann["image_id"] = new_image_id
+                new_id = str(next(id_generator))
+                new_id = name_id(new_id, 8)
+                ann["id"] = new_id
                 new_annotations["annotations"].append(ann)
+            
         print("Done!")
+        
+        # print("Saving the new annotations files to 'data/labels'...")
+        # for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
+        #     annot = list(filter(lambda x: x["image_id"]==image_id, annotations))
+        #     for ann in annot:
+        #         new_id = self.img2id[file_name]
+        #         new_id = name_id(new_id, 6)
+        #         ann["image_id"] = new_id
+        #         new_annotations["annotations"].append(ann)
+        # print("Done!")
         
         # number of annotations
         print("Total number of annotations: " + str(len(new_annotations["annotations"])))
         
-        # standardizziamo e unifichiamo gli ID delle annotazioni
-        print("Setting annotations IDs to be unique!")
-        id_generator = uniqueid()
-        for ann in new_annotations["annotations"]:
-            id = str(next(id_generator))
-            id = name_id(id, 8)
-            ann["id"] = id
-        print("Done!")
+        # # standardizziamo e unifichiamo gli ID delle annotazioni
+        # print("Setting annotations IDs to be unique!")
+        # id_generator = uniqueid()
+        # for ann in new_annotations["annotations"]:
+        #     id = str(next(id_generator))
+        #     id = name_id(id, 8)
+        #     ann["id"] = id
+        # print("Done!")
         
         print("Writing the 'annotations.json' file...")
         f = open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json", "w")
