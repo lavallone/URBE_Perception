@@ -25,8 +25,10 @@ class ExtractionToolkit:
         self.img2id = img2id
         self.img2oldID = img2oldID
         self.oldID2id = oldID2id
-        self.images_list = images_list # all'inizio è 'None'
+        self.images_list = (json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/images_list.json")))["images_list"]
         self.old_ids_list = old_ids_list # all'inizio è 'None'
+        
+        self.processed_images_so_far = {"images_so_far" : []}
         
     def extract_images(self):
         print("Starting extracting images...")
@@ -37,40 +39,44 @@ class ExtractionToolkit:
             os.remove(f)
         print("Done!")
         
+        ################################################################################
+        #### IF WE ALREADY HAVE THE 'images_list.json' file WE DON'T NEED THIS CODE ####
+        ################################################################################
         # we select images because many of them are similar (subsequent frame images)
-        waymo_list = []
-        bdd100k_list = []
-        argoverse_list = []
+        # waymo_list = []
+        # bdd100k_list = []
+        # argoverse_list = []
         
-        print("Processing Waymo images...")
-        for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos"):
-            video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v
-            images_list = sorted(os.listdir(video_folder))
-            for i in range(0,len(images_list), 9):
-                waymo_list = waymo_list + [video_folder+"/"+images_list[i], video_folder+"/"+images_list[i+1], video_folder+"/"+images_list[i+2]]
+        # print("Processing Waymo images...")
+        # for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos"):
+        #     video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Waymo/images/videos/"+v
+        #     images_list = sorted(os.listdir(video_folder))
+        #     for i in range(0,len(images_list), 9):
+        #         waymo_list = waymo_list + [video_folder+"/"+images_list[i], video_folder+"/"+images_list[i+1], video_folder+"/"+images_list[i+2]]
         
-        print("Processing BDD100K images...")
-        for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"):
-            video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"+v+"/"
-            images_list = sorted(os.listdir(video_folder))
-            for i in range(0, len(images_list), 3):
-                bdd100k_list.append(video_folder+images_list[i])
+        # print("Processing BDD100K images...")
+        # for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"):
+        #     video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/BDD100K/images/videos/"+v+"/"
+        #     images_list = sorted(os.listdir(video_folder))
+        #     for i in range(0, len(images_list), 3):
+        #         bdd100k_list.append(video_folder+images_list[i])
                 
-        print("Processing Argoverse images...")
-        for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"):
-            video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"+v+"/"
-            images_list = sorted(os.listdir(video_folder))
-            for i in range(0, len(images_list), 6):
-                argoverse_list.append(video_folder+images_list[i])
+        # print("Processing Argoverse images...")
+        # for v in os.listdir("/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"):
+        #     video_folder = "/content/drive/MyDrive/VISIOPE/Project/datasets/Argoverse/images/videos/"+v+"/"
+        #     images_list = sorted(os.listdir(video_folder))
+        #     for i in range(0, len(images_list), 6):
+        #         argoverse_list.append(video_folder+images_list[i])
                 
-        self.images_list = waymo_list + bdd100k_list + argoverse_list
-        random.shuffle(self.images_list) # for shuffling the order of the images
-        print("Now the images are: {}".format(len(self.images_list)))
+        # self.images_list = waymo_list + bdd100k_list + argoverse_list
+        # random.shuffle(self.images_list) # for shuffling the order of the images
+        # print("Now the images are: {}".format(len(self.images_list)))
         # we save  the list for future purposes
-        f = open("/content/drive/MyDrive/VISIOPE/Project/data/images_list.json", "w")
-        d = {"images_list" : self.images_list}
-        json.dump(d, f)
-        f.close()
+        # f = open("/content/drive/MyDrive/VISIOPE/Project/data/images_list.json", "w")
+        # d = {"images_list" : self.images_list}
+        # json.dump(d, f)
+        # f.close()
+        ################################################################################
         
         # creo anche la lista dei vecchi IDs
         self.old_ids_list = []
@@ -97,12 +103,39 @@ class ExtractionToolkit:
         images = coco_waymo.dataset["images"] + coco_bdd100k.dataset["images"] + coco_argoverse.dataset["images"]
         annotations = coco_waymo.dataset["annotations"] + coco_bdd100k.dataset["annotations"] + coco_argoverse.dataset["annotations"] 
         
-        new_annotations = {"info" : {"num_images" : 191723}, "images" : [], "annotations" : []}
+        # loading the new annotations file
+        new_annotations = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json"))
+        
+        #self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
+        
+        # # cleaning
+        # print("start cleaning...")
+        # print(len(self.processed_images_so_far["images_so_far"]))
+        # print(len(new_annotations["annotations"]))
+        # step=0
+        # self.processed_images_so_far["images_so_far"].reverse()
+        # for s,i in self.processed_images_so_far["images_so_far"].reverse():
+        #     if s%500 == 0:
+        #         step=s
+        #         break
+        #     self.processed_images_so_far["images_so_far"].reverse().remove((s,i))
+        #     # devo rimuovere  pure le annotations in new_annotations
+        #     id = self.img2id[i]
+        #     annotations = list(filter(lambda x: x["id"]==id, new_annotations["annotations"]))
+        #     for a in annotations:
+        #         new_annotations["annotations"].remove(a)
+        # self.processed_images_so_far["images_so_far"].reverse()
+        # print("Done!")
+        # print(len(self.processed_images_so_far["images_so_far"]))
+        # print(self.processed_images_so_far["images_so_far"])
+        # print(len(new_annotations["annotations"]))
+        
         
         print("Create new annotations...")
         id_generator = uniqueid()
         for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
             #--------------------------------------------------------------------------#
+            step += 1
             d = {}
             im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], images))[0]       
             id = self.img2id[file_name]
@@ -123,6 +156,11 @@ class ExtractionToolkit:
                 new_id = name_id(new_id, 8)
                 ann["id"] = new_id
                 new_annotations["annotations"].append(ann)
+            self.processed_images_so_far["images_so_far"].append((step, file_name))
+            if step%500: # save the processed images
+                f = open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json", "w")
+                json.dump(self.processed_images_so_far, f)
+                f.close()
             
         print("Done!")
         
