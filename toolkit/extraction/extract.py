@@ -133,6 +133,7 @@ class ExtractionToolkit:
         
         print("Create new annotations...")
         id_generator = uniqueid()
+        step=0
         for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
             #--------------------------------------------------------------------------#
             step += 1
