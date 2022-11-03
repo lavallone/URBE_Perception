@@ -128,8 +128,8 @@ class ExtractionToolkit:
         
         print("Create new annotations...")
         id_generator = uniqueid()
-        new_images_list = list(filter(lambda x: x["id"] in self.old_ids_list, images))
-        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, annotations))
+        new_images_list = list(filter(lambda x: x["id"] in self.old_ids_list, tqdm(images)))
+        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations)))
         print(len(new_images_list))
         l=[i["image_id"] for i in new_annotations_list]
         l=list(set(l))
