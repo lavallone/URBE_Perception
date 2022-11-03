@@ -129,12 +129,13 @@ class ExtractionToolkit:
         # saving the subsets of the original 'images' and 'annotations' for EFFICENCY REASONS
         new_images_list= (json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/new_images_list.json")))["images"]
         
-        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations[:20])))
+        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations[:1000])))
         l=[i["image_id"] for i in new_annotations_list]
         l=list(set(l))
         print(len(l))
         d = {"annotations" : new_annotations_list}
-        f = json.dump(d, open("/content/drive/MyDrive/VISIOPE/Project/data/new_annotations_list.json", "w"))
+        f = open("/content/drive/MyDrive/VISIOPE/Project/data/new_annotations_list.json", "w")
+        json.dump(d, f)
         f.close()
         
         #new_annotations_list = (json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/new_annotations_list.json")))["annotations"]
