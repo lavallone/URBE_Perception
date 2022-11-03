@@ -53,13 +53,13 @@ def lookup_tables_create():
   print(len(oldID2id.keys()))
 
   # We also write it in a json file for future uses.
-  f = open("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json", "w")
+  f = open("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/img2id.json", "w")
   json.dump(img2id, f)
   f.close()
-  f = open("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json", "w")
+  f = open("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/img2oldID.json", "w")
   json.dump(img2oldID, f)
   f.close()
-  f = open("/content/drive/MyDrive/VISIOPE/Project/data/oldID2id.json", "w")
+  f = open("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/oldID2id.json", "w")
   json.dump(oldID2id, f)
   f.close()
 
@@ -70,15 +70,15 @@ if __name__=="__main__":
     img2id = None
     img2oldID = None
     oldID2id = None
-    file_path1 = Path("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json")
-    file_path2 = Path("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json")
-    file_path3 = Path("/content/drive/MyDrive/VISIOPE/Project/data/oldID2id.json")
+    file_path1 = Path("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/img2id.json")
+    file_path2 = Path("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/img2oldID.json")
+    file_path3 = Path("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/oldID2id.json")
     
     if file_path1.is_file() and file_path2.is_file() and file_path3.is_file(): # all the files exist
         print("loading the lookup tables...")
-        img2id = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2id.json"))
-        img2oldID = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/img2oldID.json"))
-        oldID2id = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/oldID2id.json"))
+        img2id = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/img2id.json"))
+        img2oldID = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/img2oldID.json"))
+        oldID2id = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/lookup_tables/oldID2id.json"))
         print("Done!")
     else: # ne basta uno non caricato
         print("creating the lookup tables...")

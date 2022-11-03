@@ -120,20 +120,28 @@ class ExtractionToolkit:
         # loading the new annotations file
         new_annotations = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/labels/COCO/annotations.json"))
         
+        # needed if the overall process is interrupted during its execution! ("checkpoint logic")
         self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
-        
         step = self.processed_images_so_far["images_so_far"][-1][0]
         self.images_list = self.images_list[step:]
         self.old_ids_list = self.old_ids_list[step:]
         
-        print("Create new annotations...")
-        id_generator = uniqueid()
+        # saving the subsets of the original 'images' and 'annotations' for EFFICENCY REASONS
         new_images_list = list(filter(lambda x: x["id"] in self.old_ids_list, tqdm(images)))
         new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations)))
         print(len(new_images_list))
         l=[i["image_id"] for i in new_annotations_list]
         l=list(set(l))
         print(len(l))
+        d = {"images" : new_images_list}
+        f = json.dump(d, open("/content/drive/MyDrive/VISIOPE/Project/data/new_images_list.json", "w"))
+        f.close()
+        d = {"annotations" : new_annotations_list}
+        f = json.dump(d, open("/content/drive/MyDrive/VISIOPE/Project/data/new_annotations_list.json", "w"))
+        f.close()
+        
+        print("Create new annotations...")
+        id_generator = uniqueid()
         # for file_name,image_id in tqdm(zip(self.images_list, self.old_ids_list)):
         #     #--------------------------------------------------------------------------#
         #     step += 1
