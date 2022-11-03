@@ -129,10 +129,10 @@ class ExtractionToolkit:
         # saving the subsets of the original 'images' and 'annotations' for EFFICENCY REASONS
         new_images_list= (json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/new_images_list.json")))["images"]
         
-        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations[:1000])))
-        l=[i["image_id"] for i in new_annotations_list]
-        l=list(set(l))
-        print(len(l))
+        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations)))
+        #l=[i["image_id"] for i in new_annotations_list]
+        #l=list(set(l))
+        #print(len(l))
         d = {"annotations" : new_annotations_list}
         f = open("/content/drive/MyDrive/VISIOPE/Project/data/new_annotations_list.json", "w")
         json.dump(d, f)
@@ -146,7 +146,7 @@ class ExtractionToolkit:
         #     #--------------------------------------------------------------------------#
         #     step += 1
         #     d = {}
-        #     im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], new_images_list))[0]       
+        #     im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], new_images_list["images"]))[0]       
         #     id = self.img2id[file_name]
         #     id = name_id(id, 6)
         #     d["id"] = id
@@ -155,9 +155,9 @@ class ExtractionToolkit:
         #     d["height"] = 720
         #     d["timeofday"] = im["timeofday"]
         #     new_annotations["images"].append(d)
-        #     new_images_list.remove(im) # rimuovo per efficienza futura computazionale
+        #     new_images_list["images"].remove(im) # rimuovo per efficienza futura computazionale
         #     #--------------------------------------------------------------------------#
-        #     annot = list(filter(lambda x: x["image_id"]==image_id, new_annotations_list))
+        #     annot = list(filter(lambda x: x["image_id"]==image_id, new_annotations_list["annotations"]))
         #     for ann in annot:
         #         new_image_id = self.img2id[file_name]
         #         new_image_id = name_id(new_image_id, 6)
@@ -166,7 +166,7 @@ class ExtractionToolkit:
         #         new_id = name_id(new_id, 8)
         #         ann["id"] = new_id
         #         new_annotations["annotations"].append(ann)
-        #         new_annotations_list.remove(ann) # per efficienza
+        #         new_annotations_list["annotations"].remove(ann) # per efficienza
         #     self.processed_images_so_far["images_so_far"].append((step, file_name))
         #     #--------------------------------------------------------------------------#
         #     if step%500 == 0: # save the processed images
