@@ -127,18 +127,17 @@ class ExtractionToolkit:
         self.old_ids_list = self.old_ids_list[step:]
         
         # saving the subsets of the original 'images' and 'annotations' for EFFICENCY REASONS
-        new_images_list = list(filter(lambda x: x["id"] in self.old_ids_list, tqdm(images)))
-        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations)))
-        print(len(new_images_list))
+        new_images_list= (json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/new_images_list.json")))["images"]
+        
+        new_annotations_list = list(filter(lambda x: x["image_id"] in self.old_ids_list, tqdm(annotations[:20])))
         l=[i["image_id"] for i in new_annotations_list]
         l=list(set(l))
         print(len(l))
-        d = {"images" : new_images_list}
-        f = json.dump(d, open("/content/drive/MyDrive/VISIOPE/Project/data/new_images_list.json", "w"))
-        f.close()
         d = {"annotations" : new_annotations_list}
         f = json.dump(d, open("/content/drive/MyDrive/VISIOPE/Project/data/new_annotations_list.json", "w"))
         f.close()
+        
+        #new_annotations_list = (json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/new_annotations_list.json")))["annotations"]
         
         print("Create new annotations...")
         id_generator = uniqueid()
