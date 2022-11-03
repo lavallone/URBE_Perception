@@ -138,8 +138,7 @@ class ExtractionToolkit:
         #     #--------------------------------------------------------------------------#
         #     step += 1
         #     d = {}
-        #     im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], new_images_list))[0] 
-        #     new_images_list.remove(im) # rimuovo per efficienza futura computazionale      
+        #     im = list(filter(lambda x: x["id"]==self.img2oldID[file_name], new_images_list))[0]       
         #     id = self.img2id[file_name]
         #     id = name_id(id, 6)
         #     d["id"] = id
@@ -148,6 +147,7 @@ class ExtractionToolkit:
         #     d["height"] = 720
         #     d["timeofday"] = im["timeofday"]
         #     new_annotations["images"].append(d)
+        #     new_images_list.remove(im) # rimuovo per efficienza futura computazionale
         #     #--------------------------------------------------------------------------#
         #     annot = list(filter(lambda x: x["image_id"]==image_id, new_annotations_list))
         #     for ann in annot:
