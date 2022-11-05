@@ -87,4 +87,5 @@ if __name__=="__main__":
     
     toolkit = ExtractionToolkit(img2id=img2id, img2oldID=img2oldID, oldID2id=oldID2id)
     toolkit.extract_images()
-    toolkit.extract_labels()
+    #toolkit.extract_labels()
+    toolkit.save_images()
