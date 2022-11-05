@@ -176,14 +176,16 @@ class ExtractionToolkit:
             im = Image.open(file_name)
             resized_im = im.resize((1280, 720))
             final_im = resized_im.convert("RGB")
+            print(final_im)
             image_list.append(final_im)
+            print(image_list[step-1])
             #final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
             self.processed_images_so_far["images_so_far"].append(step)
             if step % 5 == 0: # we actually save the images
               print(image_list)
               for f_i in image_list:
-                 f_i.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name, save_all=True, append_images=image_list)
-              image_list = []
+                 f_i.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
+              #image_list = []
               f = open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json", "w")
               json.dump(self.processed_images_so_far, f)
               f.close()
