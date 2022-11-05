@@ -179,7 +179,7 @@ class ExtractionToolkit:
             image_list.append(final_im)
             #final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
             self.processed_images_so_far["images_so_far"].append(step)
-            if step % 500 == 0: # we actually save the images
+            if step % 200 == 0: # we actually save the images
               for f_i in image_list:
                  f_i.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
               image_list = []
