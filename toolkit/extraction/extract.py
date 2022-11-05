@@ -167,7 +167,7 @@ class ExtractionToolkit:
         
         print("Saving the new images to 'data/images'...")
         image_list = []
-        for file_name in tqdm(self.images_list):
+        for file_name in tqdm(self.images_list[:20]):
             step+= 1 
             id = self.img2id[file_name]
             name = name_id(id, 6)
@@ -179,7 +179,8 @@ class ExtractionToolkit:
             image_list.append(final_im)
             #final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
             self.processed_images_so_far["images_so_far"].append(step)
-            if step % 200 == 0: # we actually save the images
+            if step % 5 == 0: # we actually save the images
+              print(image_list)
               for f_i in image_list:
                  f_i.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
               image_list = []
