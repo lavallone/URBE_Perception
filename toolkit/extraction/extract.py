@@ -163,8 +163,10 @@ class ExtractionToolkit:
         
         #self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
         #step = self.processed_images_so_far["images_so_far"][-1]#[0]
-        last_saved_image = os.listdir("/content/drive/MyDrive/VISIOPE/Project/data/images")[-1]
-        step = int(last_saved_image.split("_")[0])
+        
+        #last_saved_image = os.listdir("/content/drive/MyDrive/VISIOPE/Project/data/images")[-1]
+        #step = int(last_saved_image.split("_")[0])
+        step=0
         self.images_list = self.images_list[step:]
         
         print("Saving the new images to 'data/images'...")
