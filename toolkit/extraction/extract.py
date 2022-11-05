@@ -156,11 +156,6 @@ class ExtractionToolkit:
         # print("Done!")
         
         
-        # need to remove all the images 
-        #l = os.listdir('/content/drive/MyDrive/VISIOPE/Project/data/images/')[step:]
-        #for im in l:
-        #    os.remove(im)
-        
         #self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
         #step = self.processed_images_so_far["images_so_far"][-1]#[0]
         
