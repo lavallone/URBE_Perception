@@ -155,13 +155,18 @@ class ExtractionToolkit:
         #     os.remove(f)
         # print("Done!")
         
+        # need to remove all the images 
+        #l = os.listdir('/content/drive/MyDrive/VISIOPE/Project/data/images/')[step:]
+        #for im in l:
+        #    os.remove(im)
+        
         self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
-        step = self.processed_images_so_far["images_so_far"][-1]
+        step = self.processed_images_so_far["images_so_far"][-1][0]
         self.images_list = self.images_list[step:]
         
         print("Saving the new images to 'data/images'...")
-        image_list = []
-        for file_name in tqdm(self.images_list):
+        #image_list = []
+        for file_name in tqdm(self.images_list[:100]):
             step+= 1 
             id = self.img2id[file_name]
             name = name_id(id, 6)
@@ -170,12 +175,13 @@ class ExtractionToolkit:
             im = Image.open(file_name)
             resized_im = im.resize((1280, 720))
             final_im = resized_im.convert("RGB")
-            image_list.append(final_im)
-            self.processed_images_so_far["images_so_far"].append(step)
+            #image_list.append(final_im)
+            final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
+            self.processed_images_so_far["images_so_far"].append((step,name))
             if step % 500 == 0: # we actually save the images
-              for f_i in image_list:
-                  f_i.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
-              image_list = []
+              #for f_i in image_list:
+              #   f_i.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
+              #image_list = []
               f = open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json", "w")
               json.dump(self.processed_images_so_far, f)
               f.close()
