@@ -155,10 +155,6 @@ class ExtractionToolkit:
         #     os.remove(f)
         # print("Done!")
         
-        
-        #self.processed_images_so_far = json.load(open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json"))
-        #step = self.processed_images_so_far["images_so_far"][-1]#[0]
-        
         saved_images_so_far = os.listdir("/content/drive/MyDrive/VISIOPE/Project/data/images")
         saved_images_so_far = sorted( saved_images_so_far, key=lambda x: int(x.split("_")[0]) )
         last_saved_image = saved_images_so_far[-1]
@@ -176,9 +172,4 @@ class ExtractionToolkit:
             resized_im = im.resize((1280, 720))
             final_im = resized_im.convert("RGB")
             final_im.save('/content/drive/MyDrive/VISIOPE/Project/data/images/'+ name)
-            #self.processed_images_so_far["images_so_far"].append(step)
-            #if step % 5 == 0: # we actually save the images
-            #  f = open("/content/drive/MyDrive/VISIOPE/Project/data/processed_images_so_far.json", "w")
-            #  json.dump(self.processed_images_so_far, f)
-            #  f.close()
         print("Done!")
