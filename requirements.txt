@@ -1,5 +1,3 @@
 pytorch-lightning==1.1.7
 numpy
-opencv-python
-tensorflow
-open3d
+matplotlib==3.5.2
