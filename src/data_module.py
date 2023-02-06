@@ -46,7 +46,7 @@ class URBE_Dataset(Dataset):
 				w = x2 - x1 # w
 				h = y2 - y1 # h
 				labels.append( [round(x1, 2), round(y1, 2), round(w, 2), round(h, 2), ann["category_id"]] )
-			self.data.append({"id" : image_id, "img" : img, "time" : time, "labels" : labels})
+			self.data.append({"id" : image_id, "img" : img, "time" : time, "file_name" : file_name, "labels" : labels})
 	
 	def __len__(self):
 		return len(self.data)
@@ -116,8 +116,9 @@ class URBE_DataModule(pl.LightningDataModule):
 	def collate(self, batch):
 		batch_out = dict()
 		batch_out["id"] = [sample["id"] for sample in batch]
-		batch_out["img"] = [sample["img"] for sample in batch]
+		batch_out["img"] = torch.stack([sample["img"] for sample in batch], dim=0)
 		batch_out["time"] = [sample["time"] for sample in batch]
+		batch_out["file_name"] = [sample["file_name"] for sample in batch]
 		max_number_bbox = torch.tensor([len(sample["labels"]) for sample in batch]).max()
 		batch_out["labels"] = []
 		for sample in batch:

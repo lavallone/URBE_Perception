@@ -2,10 +2,63 @@ import math
 import torch
 import torch.nn as nn
 
+def target2percent(targets, img_size): # it transforms with percentage 
+    # From [cx, cy, w, h] to [cx%, cy%, w%, h%]
+    targets[:, :, 1] = targets[:, :, 1] / img_size[0]
+    targets[:, :, 3] = targets[:, :, 3] / img_size[0]
+    targets[:, :, 2] = targets[:, :, 2] / img_size[1]
+    targets[:, :, 4] = targets[:, :, 4] / img_size[1]
+    return targets
 
-class YOLOv5Loss:
+
+def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
+    # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
+    box2 = box2.T
+
+    # Get the coordinates of bounding boxes
+    if x1y1x2y2:  # x1, y1, x2, y2 = box1
+        b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
+        b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
+    else:  # transform from xywh to xyxy
+        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
+        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
+        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
+        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
+
+    # Intersection area
+    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
+            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
+
+    # Union Area
+    w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
+    w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
+    union = w1 * h1 + w2 * h2 - inter + eps
+
+    iou = inter / union
+    if GIoU or DIoU or CIoU:
+        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
+        ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
+        if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
+            c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
+            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
+                    (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
+            if DIoU:
+                return iou - rho2 / c2  # DIoU
+            elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
+                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
+                with torch.no_grad():
+                    alpha = v / (v - iou + (1 + eps))
+                return iou - (rho2 / c2 + v * alpha)  # CIoU
+        else:  # GIoU https://arxiv.org/pdf/1902.09630.pdf
+            c_area = cw * ch + eps  # convex area
+            return iou - (c_area - union) / c_area  # GIoU
+    else:
+        return iou  # IoU
+
+
+class YOLOLoss:
     def __init__(self, num_classes, img_size, anchors, strides, anchor_thre, balance):
-        super(YOLOv5Loss, self).__init__()
+        super(YOLOLoss, self).__init__()
         self.num_classes = num_classes
         self.img_size = img_size
         self.anchors = torch.tensor(anchors)
@@ -14,6 +67,7 @@ class YOLOv5Loss:
         self.anchor_thre = anchor_thre
         self.balance = balance
 
+        self.batch_size = 64
         self.gr = 1.0
         self.BCEcls = None
         self.BCEobj = None
@@ -23,7 +77,7 @@ class YOLOv5Loss:
         self.lambda_obj = 1.0
         self.lambda_cls = 0.0375
 
-    def __call__(self, inputs, targets):
+    def predict(self, inputs, targets):
         """
         :param inputs: a list of prediction grids
         :param targets: (bs, max_label, 5)
@@ -131,7 +185,10 @@ class YOLOv5Loss:
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
             anch.append(anchor[a])  # anchors
             tcls.append(c)  # class
+            
+        return inputs, tcls, tbox, indices, anch
 
+    def compute_loss(self, inputs, tcls, tbox, indices, anch):
         for i, pi in enumerate(inputs):  # layer index, layer predictions
             b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx #accedo agli indici del layer i-esimo
             tobj = torch.zeros_like(pi[..., 0]).type_as(pi)
@@ -160,58 +217,4 @@ class YOLOv5Loss:
         lobj *= self.lambda_obj
         lcls *= self.lambda_cls
         loss = lbox + lobj + lcls
-        return loss * bs, torch.cat((lbox, lobj, lcls, loss)).detach()
-
-
-def target2percent(targets, img_size): # it transforms with percentage 
-    # From [cx, cy, w, h] to [cx%, cy%, w%, h%]
-    targets[:, :, 1] = targets[:, :, 1] / img_size[0]
-    targets[:, :, 3] = targets[:, :, 3] / img_size[0]
-    targets[:, :, 2] = targets[:, :, 2] / img_size[1]
-    targets[:, :, 4] = targets[:, :, 4] / img_size[1]
-    return targets
-
-
-def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
-    # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
-    box2 = box2.T
-
-    # Get the coordinates of bounding boxes
-    if x1y1x2y2:  # x1, y1, x2, y2 = box1
-        b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
-        b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
-    else:  # transform from xywh to xyxy
-        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
-        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
-        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
-        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
-
-    # Intersection area
-    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
-            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
-
-    # Union Area
-    w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
-    w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
-    union = w1 * h1 + w2 * h2 - inter + eps
-
-    iou = inter / union
-    if GIoU or DIoU or CIoU:
-        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
-        ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
-        if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
-            c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
-                    (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
-            if DIoU:
-                return iou - rho2 / c2  # DIoU
-            elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
-                v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
-                with torch.no_grad():
-                    alpha = v / (v - iou + (1 + eps))
-                return iou - (rho2 / c2 + v * alpha)  # CIoU
-        else:  # GIoU https://arxiv.org/pdf/1902.09630.pdf
-            c_area = cw * ch + eps  # convex area
-            return iou - (c_area - union) / c_area  # GIoU
-    else:
-        return iou  # IoU
+        return loss * self.batch_size, torch.cat((lbox, lobj, lcls, loss)).detach()
