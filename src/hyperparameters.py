@@ -7,7 +7,7 @@ class Hparams:
     dataset_dir: str = "dataset/URBE_dataset/images"
     annotations_file_path: str = "dataset/URBE_dataset/labels/COCO/annotations.json"
     max_number_images: int = 350#3500
-    obj_classes: int = 3 # number of classes in the dataset
+    num_classes: int = 3 # number of classes in the dataset
     augmentation: bool = False # apply augmentation startegy to input images
     img_size: int = 640  # size of image in v1 256 works better, in v2 224
     img_channels: int = 3 # RGB channels
@@ -16,14 +16,17 @@ class Hparams:
     pin_memory: bool = False # parameter to pin memory in dataloader
     
     # YOLOv5 params
-    neck: str = "v1"
-    head: str = "decoupled" # or decoupled
-    pretrained_backbone: bool = False
+    head: str = "simple" # or decoupled
+    first_out: int = 48 # for YOLOv5m or 16 for YOLOv5n
     lr: float = 2e-4 # 2e-4 or 1e-3
     min_lr: float = 1e-8 # min lr for ReduceLROnPlateau
     adam_eps: float = 1e-6 # term added to the denominator to improve numerical stability
     w_std: float = +0.3 # this param weights how much we are going to add of the std in treshold update
     wd: float = 1e-6 # weight decay as regulation strategy
+    
+    # training params
+    resume_from_checkpoint: str = None # checkpoint model path from which we want to RESUME the training
+    load_pretrained: bool = True
     
     # LOGGING params
     log_images: int = 4 # how many images to log each time

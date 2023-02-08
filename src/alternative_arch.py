@@ -1,16 +1,6 @@
-from collections import Counter
 import torch
-from torch import optim, nn
-import torch.nn.functional as F
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-import torchvision.utils
-import wandb
+from torch import nn
 import math
-import numpy as np
-import pytorch_lightning as pl
-from .data_module import URBE_DataModule
-import random
-from torchmetrics import Precision
 
 ##############################################################################################################################
 def get_activation(name="silu", inplace=True):
@@ -67,8 +57,6 @@ class BaseConv(nn.Module):
 		elif self.norm is None:
 			return self.act(self.conv(x))
 		return self.act(self.norm(self.conv(x)))
-	def fuseforward(self, x):
-		return self.act(self.conv(x))
 
 class Focus(nn.Module):
 	"""Focus width and height information into channel space."""
@@ -422,17 +410,25 @@ class DecoupledHead(nn.Module):
 		for k, (cls_conv, reg_conv, x) in enumerate(zip(self.cls_convs, self.reg_convs, inputs)):
 			# Change all inputs to the same channel.
 			x = self.stems[k](x)
-
+			print(k)
 			cls_x = x
 			reg_x = x
+			print(x.shape)
 
 			cls_feat = cls_conv(cls_x)
+			print(cls_feat.shape)
 			cls_output = self.cls_preds[k](cls_feat)
+			print(cls_output.shape)
+			print("------")
 			reg_feat = reg_conv(reg_x)
+			print(reg_feat.shape)
 			reg_output = self.reg_preds[k](reg_feat)
 			obj_output = self.obj_preds[k](reg_feat)
+			print(reg_output.shape)
+			print(obj_output.shape)
 
 			# output: [batch_size, n_ch, h, w]
 			output = torch.cat([reg_output, obj_output, cls_output], 1)
+			print(output.shape)
 			outputs.append(output)
 		return outputs
