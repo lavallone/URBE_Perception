@@ -1,50 +1,32 @@
-import omegaconf
-import hydra
-
 import pytorch_lightning as pl
+import torch
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.loggers.wandb import WandbLogger
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks import ModelCheckpoint
 
-from src.pl_data_modules import BasePLDataModule
-from src.pl_modules import BasePLModule
-
-
-def train(conf: omegaconf.DictConfig) -> None:
-
-    # reproducibility
-    pl.seed_everything(conf.train.seed)
-
-    # data module declaration
-    pl_data_module = BasePLDataModule(conf)
-
-    # main module declaration
-    pl_module = BasePLModule(conf)
-
-    # callbacks declaration
-    callbacks_store = []
-
-    if conf.train.early_stopping_callback is not None:
-        early_stopping_callback: EarlyStopping = hydra.utils.instantiate(conf.train.early_stopping_callback)
-        callbacks_store.append(early_stopping_callback)
-
-    if conf.train.model_checkpoint_callback is not None:
-        model_checkpoint_callback: ModelCheckpoint = hydra.utils.instantiate(conf.train.model_checkpoint_callback)
-        callbacks_store.append(model_checkpoint_callback)
-
-    # trainer
-    trainer: Trainer = hydra.utils.instantiate(conf.train.pl_trainer, callbacks=callbacks_store)
-
-    # module fit
-    trainer.fit(pl_module, datamodule=pl_data_module)
-
-    # module test
-    trainer.test(pl_module, datamodule=pl_data_module)
-
-
-@hydra.main(config_path="../conf", config_name="root")
-def main(conf: omegaconf.DictConfig):
-    train(conf)
-
-
-if __name__ == "__main__":
-    main()
+def train_model(data, model, hparams, experiment_name, patience, metric_to_monitor, mode, epochs):
+    logger =  WandbLogger()
+    logger.experiment.watch(model, log = None, log_freq = 100000)
+    early_stop_callback = EarlyStopping(
+        monitor=metric_to_monitor, mode=mode, min_delta=0.00, patience=patience, verbose=True)
+    checkpoint_callback = ModelCheckpoint(
+        save_top_k=3, monitor=metric_to_monitor, mode=mode, dirpath="models",
+        filename=experiment_name +
+        "-{epoch:02d}-{mAP_50:.4f}", verbose=True)
+    # the trainer collect all the useful informations so far for the training
+    n_gpus = 1 if torch.cuda.is_available() else 0
+    if hparams["resume_from_checkpoint"] is not None:
+        trainer = pl.Trainer(
+            logger=logger, max_epochs=epochs, log_every_n_steps=1, gpus=n_gpus,
+            callbacks=[early_stop_callback, checkpoint_callback],
+            num_sanity_val_steps=0, resume_from_checkpoint=hparams["resume_from_checkpoint"]
+            )
+    else:
+        trainer = pl.Trainer(
+            logger=logger, max_epochs=epochs, log_every_n_steps=1, gpus=n_gpus,
+            callbacks=[early_stop_callback, checkpoint_callback],
+            num_sanity_val_steps=0,
+            )
+    trainer.fit(model, data)
+    return trainer

@@ -15,6 +15,7 @@ from .loss import YOLO_Loss
 import random
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from torchvision.ops import nms
+import torchvision.transforms as T
 
 ########################################## BASIC BUILDING BLOCKS ##############################################
 ##                                                                                                           ##
@@ -437,20 +438,14 @@ class URBE_Perception(pl.LightningModule):
         return torch.cat(all_bboxes, dim=1).tolist() if to_list else torch.cat(all_bboxes, dim=1)
 
     def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=300, tolist=True):
-
-        """
-        new_bboxes = []
-        for box in bboxes:
-            if box[1] > threshold:
-                box[3] = box[0] + box[3]
-                box[2] = box[2] + box[4]
-                new_bboxes.append(box)
-        """
-
         bboxes_after_nms = []
         for boxes in batch_bboxes:
+            #print("Total number of predicted bboxes:")
+            #print(boxes.shape)
             boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we predict the bbox!
-
+            #print("After threshold filtering:")
+            #print(boxes.shape)
+            
             # from xywh to x1y1x2y2 --> it is perfect fot wandb visualization!
             boxes[..., 2:3] = boxes[..., 2:3] - (boxes[..., 4:5] / 2)
             boxes[..., 3:4] = boxes[..., 3:4] - (boxes[..., 5:] / 2)
@@ -459,7 +454,9 @@ class URBE_Perception(pl.LightningModule):
 
             indices = nms(boxes=boxes[..., 2:] + boxes[..., 0:1], scores=boxes[..., 1], iou_threshold=iou_threshold)
             boxes = boxes[indices]
-            # boxes are now osrted by objectness score thanks to torch metrics's nms
+            #print("After nms filtering:")
+            #print(boxes.shape)
+            # boxes are now sorted by objectness score thanks to torch metrics's nms
 
             if boxes.shape[0] > max_detections: # we filter the maximum number of detections for a single batch
                 boxes = boxes[:max_detections, :]
@@ -467,23 +464,24 @@ class URBE_Perception(pl.LightningModule):
             bboxes_after_nms.append(boxes.tolist() if tolist else boxes)
         return bboxes_after_nms if tolist else torch.cat(bboxes_after_nms, dim=0)
 
-    # # images logging during training phase but used for validation images
-    # def get_images_for_log(self, real, reconstructed):
-    # 	example_images = []
-    # 	real = MVTec_DataModule.denormalize(real)
-    # 	reconstructed = MVTec_DataModule.denormalize(reconstructed)
-    # 	for i in range(real.shape[0]):
-    # 		couple = torchvision.utils.make_grid(
-    # 			[real[i], reconstructed[i]],
-    # 			nrow=2,
-    # 			scale_each=False,
-    # 			pad_value=1,
-    # 			padding=4,
-    # 		)  
-    # 		example_images.append(
-    # 			wandb.Image(couple.permute(1, 2, 0).detach().cpu().numpy(), mode="RGB")
-    # 		)
-    # 	return example_images
+    # images logging during training phase but used for validation images
+    def get_images_for_log(self, imgs, bboxes):
+        # we prepare eaach image
+        transform = T.ToPILImage()
+        images_list = [transform(img) for img in imgs]
+        
+        example_images = []
+        for i, bbox in enumerate(bboxes): # for each image of the batch
+            ris = { "predictions" : {"box_data" : [], "class_labels" : {0 : "vehicle" , 1 : "person", 2 : "motorbike"}} }
+            for box in bbox: # for each bbox of the particular image
+                position = {"minX": box[2], "maxX": box[4] , "minY": box[3], "maxY": box[5]}
+                class_id = box[0]
+                score  = box[1]
+                box_caption = ris["predictions"]["class_labels"][class_id]
+                x = {"position" : position, "domain" : "pixel", "class_id" : class_id, "box_caption" : box_caption, "scores" : {"score" : score}}
+                ris["predictions"]["box_data"].append(x)
+            example_images.append(wandb.Image(wandb.Image(images_list[i], boxes=ris)))
+        return example_images
     # =======================================================================================#
     
     def predict(self, predictions, targets):
@@ -516,7 +514,6 @@ class URBE_Perception(pl.LightningModule):
         pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
         true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
         
-        # devo solo capire come sono queste bboxes... normalizzate o no?
         pred_dict = dict(boxes=pred_boxes[..., 2:], scores=pred_boxes[..., 1], labels=pred_boxes[..., 0],)
         true_dict = dict(boxes=true_boxes[..., 2:], labels=true_boxes[..., 0],)
         
@@ -530,23 +527,24 @@ class URBE_Perception(pl.LightningModule):
         # LOSS
         self.log("val_loss", val_loss["loss"], on_step=False, on_epoch=True, batch_size=imgs.shape[0])
     	
-        # Metrics
+        # METRICS
         pred = self.predict(out, batch['labels'])
         self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.mAP.update(pred["mAP"][0], pred["mAP"][1])
         self.log("mAP_50", self.mAP.compute()["map_50"], on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size) # in caso metti self.mAP["map_50"]
-    	# # IMAGES
-    	# if self.hparams.log_image_each_epoch!=0:
-    	# 	images = self.get_images_for_log(imgs[0:self.hparams.log_images], recon_imgs[0:self.hparams.log_images])
-    	# 	return {"images": images}
-    	# else:
-    	# 	return None
-
+    	
+     	# IMAGES
+        if self.hparams.log_image_each_epoch != 0:
+            images = self.get_images_for_log(imgs[0:self.hparams.log_images], (pred["mAP"][0]["boxes"])[0:self.hparams.log_images])
+            return {"images": images}
+        else:
+            return None
+    
     # we keep it only for image logging purposes
-    # def validation_epoch_end(self, outputs):
-    # 	if self.hparams.log_image_each_epoch!=0 and self.global_step%self.hparams.log_image_each_epoch==0:
-    # 		# we randomly select one batch index
-    # 		bidx = random.randrange(100) % len(outputs)
-    # 		images = outputs[bidx]["images"]
-    # 		self.logger.experiment.log({f"images": images})
+    def validation_epoch_end(self, outputs):
+    	if self.hparams.log_image_each_epoch!=0 and self.global_step%self.hparams.log_image_each_epoch==0:
+            # we randomly select one batch index
+            bidx = random.randrange(100) % len(outputs)
+            images = outputs[bidx]["images"]
+            self.logger.experiment.log({f"images": images})
