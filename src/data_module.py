@@ -6,6 +6,8 @@ import pytorch_lightning as pl
 import json
 import torch
 from tqdm import tqdm
+import albumentations as A
+import numpy as np
 
 class URBE_Dataset(Dataset):
 	def __init__(self, dataset_dir: str, data_type: str, annotations_file_path, hparams):
@@ -22,8 +24,11 @@ class URBE_Dataset(Dataset):
 			# if I have to add a normalization factor I'll see later
 		])
 		if self.hparams.augmentation and self.data_type == "train": # a slightly image augmentation
-				self.augmentation = transforms.Compose([transforms.RandomVerticalFlip(0.3), 
-													 transforms.RandomHorizontalFlip(0.3)])	# da vedere cosa mettere!	
+				self.augmentation = A.Compose([A.RandomCrop(width=self.hparams.img_size*0.8, height=self.hparams.img_size*0.8, p=0.2),
+        									   A.VerticalFlip(p=0.5),
+											   A.HorizontalFlip(p=0.5),
+											   A.RandomBrightnessContrast(p=0.2),
+											  ], bbox_params=A.BboxParams(format='yolo', min_visibility=0.4, label_fields=[],))	
 		self.make_data()
 	
 	def make_data(self):
@@ -45,7 +50,7 @@ class URBE_Dataset(Dataset):
 				y2 = y1 + ann["bbox"][3] / (720/self.hparams.img_size)
 				w = x2 - x1 # w
 				h = y2 - y1 # h
-				labels.append( [round(x1, 2), round(y1, 2), round(w, 2), round(h, 2), ann["category_id"]] )
+				labels.append( [ann["category_id"], round(x1/self.hparams.img_size, 2), round(y1/self.hparams.img_size, 2), round(w/self.hparams.img_size, 2), round(h/self.hparams.img_size, 2)] ) # bboxes need to be normalized
 			self.data.append({"id" : image_id, "img" : img, "time" : time, "file_name" : file_name, "labels" : labels})
 	
 	def __len__(self):
@@ -54,9 +59,18 @@ class URBE_Dataset(Dataset):
 	def __getitem__(self, idx):
 		## AUGMENTATION ## 
   		# is performed only on the training set
-		if self.hparams.augmentation and self.data_type == "train": # a slightly image augmentation
+		if self.hparams.augmentation and self.data_type == "train": # a slightly image augmentation because the dataset is already heterogeneous!
 			data_tmp = self.data[idx]
 			data_tmp["img"] = self.augmentation(data_tmp["img"])
+			# albumentations requires bboxes to be (x,y,w,h,class_idx) --> we need to change it 
+			augmentations = self.augmentation(image=data_tmp["img"], bboxes=np.roll(data_tmp["labels"], axis=1, shift=4))
+			data_tmp["img"] = augmentations["image"]
+            # loss fx requires bboxes to be (class_idx,x,y,w,h)
+			data_tmp["labels"] = np.array(augmentations["bboxes"])
+			if len(data_tmp["labels"]):
+				# and restore the original order of  bboxes
+				data_tmp["labels"] = np.roll(data_tmp["labels"], axis=1, shift=1)
+			data_tmp["labels"].tolist()
 			return data_tmp
 		else:
 			return self.data[idx]
@@ -120,13 +134,5 @@ class URBE_DataModule(pl.LightningDataModule):
 		batch_out["time"] = [sample["time"] for sample in batch]
 		batch_out["file_name"] = [sample["file_name"] for sample in batch]
 		max_number_bbox = torch.tensor([len(sample["labels"]) for sample in batch]).max()
-		batch_out["labels"] = []
-		for sample in batch:
-			batch_out["labels"].append( sample["labels"] + [ [] for _ in range(max_number_bbox - len(sample["labels"]))] )
+		batch_out["labels"] = torch.stack( [ torch.tensor(sample["labels"] + [ [0,0,0,0,0] for _ in range(max_number_bbox - len(sample["labels"]))] ) for sample in batch] )
 		return batch_out
-     
-	
-	#to invert the normalization of the compose transform. --> ci servirà?
-	@staticmethod
-	def denormalize(tensor):
-		return tensor*0.5 + 0.5

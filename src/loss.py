@@ -1,47 +1,87 @@
-import math
 import torch
 import torch.nn as nn
+import math
 
-def target2percent(targets, img_size): # it transforms with percentage 
-    # From [cx, cy, w, h] to [cx%, cy%, w%, h%]
-    targets[:, :, 1] = targets[:, :, 1] / img_size[0]
-    targets[:, :, 3] = targets[:, :, 3] / img_size[0]
-    targets[:, :, 2] = targets[:, :, 2] / img_size[1]
-    targets[:, :, 4] = targets[:, :, 4] / img_size[1]
-    return targets
+####################################################### UTILS ####################################################################
+##################################################################################################################################
+# https://github.com/aladdinpersson/Machine-Learning-Collection
+def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
+    """
+    Parameters:
+        gt_box (tensor): width and height of the ground truth box
+        anchors (tensor): lists of anchors containing width and height
+        strided_anchors (bool): if the anchors are divided by the stride or not
+    Returns:
+        tensor: Intersection over union between the gt_box and each of the n-anchors
+    """
+    anchors = anchors.float()
+    anchors /= 640
+    if strided_anchors:
+        anchors = anchors.reshape(9, 2) * torch.tensor(stride).repeat(6, 1).T.reshape(9, 2)
 
+    intersection = torch.min(gt_box[..., 0], anchors[..., 0]) * torch.min(
+        gt_box[..., 1], anchors[..., 1]
+    )
+    union = (
+        gt_box[..., 0] * gt_box[..., 1] + anchors[..., 0] * anchors[..., 1] - intersection
+    )
+    # intersection/union shape (9,)
+    return intersection / union
 
-def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
-    # Returns the IoU of box1 to box2. box1 is 4, box2 is nx4
-    box2 = box2.T
+# I added the possibility of computing also DIoU and CIoU!
+def intersection_over_union(boxes_preds, boxes_labels, box_format="midpoint", GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
+    """
+    This function calculates intersection over union (iou) given pred boxes
+    and target boxes.
 
-    # Get the coordinates of bounding boxes
-    if x1y1x2y2:  # x1, y1, x2, y2 = box1
-        b1_x1, b1_y1, b1_x2, b1_y2 = box1[0], box1[1], box1[2], box1[3]
-        b2_x1, b2_y1, b2_x2, b2_y2 = box2[0], box2[1], box2[2], box2[3]
-    else:  # transform from xywh to xyxy
-        b1_x1, b1_x2 = box1[0] - box1[2] / 2, box1[0] + box1[2] / 2
-        b1_y1, b1_y2 = box1[1] - box1[3] / 2, box1[1] + box1[3] / 2
-        b2_x1, b2_x2 = box2[0] - box2[2] / 2, box2[0] + box2[2] / 2
-        b2_y1, b2_y2 = box2[1] - box2[3] / 2, box2[1] + box2[3] / 2
+    Parameters:
+        boxes_preds (tensor): Predictions of Bounding Boxes (BATCH_SIZE, 4)
+        boxes_labels (tensor): Correct labels of Bounding Boxes (BATCH_SIZE, 4)
+        box_format (str): midpoint/corners, if boxes (x,y,w,h) or (x1,y1,x2,y2)
+        GIoU (bool): if True it computed GIoU loss (https://giou.stanford.edu)
+        eps (float): for numerical stability
 
+    Returns:
+        tensor: Intersection over union for all examples
+    """
+
+    if box_format == "midpoint":
+        box1_x1 = boxes_preds[..., 0:1] - boxes_preds[..., 2:3] / 2
+        box1_y1 = boxes_preds[..., 1:2] - boxes_preds[..., 3:4] / 2
+        box1_x2 = boxes_preds[..., 0:1] + boxes_preds[..., 2:3] / 2
+        box1_y2 = boxes_preds[..., 1:2] + boxes_preds[..., 3:4] / 2
+        box2_x1 = boxes_labels[..., 0:1] - boxes_labels[..., 2:3] / 2
+        box2_y1 = boxes_labels[..., 1:2] - boxes_labels[..., 3:4] / 2
+        box2_x2 = boxes_labels[..., 0:1] + boxes_labels[..., 2:3] / 2
+        box2_y2 = boxes_labels[..., 1:2] + boxes_labels[..., 3:4] / 2
+
+    else:  # if not midpoints box coordinates are considered to be in coco format
+        box1_x1 = boxes_preds[..., 0:1]
+        box1_y1 = boxes_preds[..., 1:2]
+        box1_x2 = boxes_preds[..., 2:3]
+        box1_y2 = boxes_preds[..., 3:4]
+        box2_x1 = boxes_labels[..., 0:1]
+        box2_y1 = boxes_labels[..., 1:2]
+        box2_x2 = boxes_labels[..., 2:3]
+        box2_y2 = boxes_labels[..., 3:4]
+
+    w1, h1, w2, h2 = box1_x2 - box1_x1, box1_y2 - box1_y1, box2_x2 - box2_x1, box2_y2 - box2_y1
     # Intersection area
-    inter = (torch.min(b1_x2, b2_x2) - torch.max(b1_x1, b2_x1)).clamp(0) * \
-            (torch.min(b1_y2, b2_y2) - torch.max(b1_y1, b2_y1)).clamp(0)
+    inter = (torch.min(box1_x2, box2_x2) - torch.max(box1_x1, box2_x1)).clamp(0) * \
+            (torch.min(box1_y2, box2_y2) - torch.max(box1_y1, box2_y1)).clamp(0)
 
     # Union Area
-    w1, h1 = b1_x2 - b1_x1, b1_y2 - b1_y1 + eps
-    w2, h2 = b2_x2 - b2_x1, b2_y2 - b2_y1 + eps
     union = w1 * h1 + w2 * h2 - inter + eps
 
     iou = inter / union
+
     if GIoU or DIoU or CIoU:
-        cw = torch.max(b1_x2, b2_x2) - torch.min(b1_x1, b2_x1)  # convex (smallest enclosing box) width
-        ch = torch.max(b1_y2, b2_y2) - torch.min(b1_y1, b2_y1)  # convex height
+        cw = torch.max(box1_x2, box2_x2) - torch.min(box1_x1, box2_x1)  # convex (smallest enclosing box) width
+        ch = torch.max(box1_y2, box2_y2) - torch.min(box1_y1, box2_y1)
         if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
-            rho2 = ((b2_x1 + b2_x2 - b1_x1 - b1_x2) ** 2 +
-                    (b2_y1 + b2_y2 - b1_y1 - b1_y2) ** 2) / 4  # center distance squared
+            rho2 = ((box2_x1 + box2_x2 - box1_x1 - box1_x2) ** 2 +
+                    (box2_y1 + box2_y2 - box1_y1 - box1_y2) ** 2) / 4  # center distance squared
             if DIoU:
                 return iou - rho2 / c2  # DIoU
             elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
@@ -52,169 +92,163 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, eps=
         else:  # GIoU https://arxiv.org/pdf/1902.09630.pdf
             c_area = cw * ch + eps  # convex area
             return iou - (c_area - union) / c_area  # GIoU
+        c_area = cw * ch + eps  # convex height
+        return iou - (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
     else:
         return iou  # IoU
+##################################################################################################################################
+
+class YOLO_Loss:
+    
+    # After the computation of the 'autoanchor' algorithm, we acknowledge that these are the "best" anchors (the default ones used in YOLOv5)
+    # https://github.com/ultralytics/yolov5/blob/master/models/yolov5m.yaml
+    ANCHORS = torch.tensor([ [(10, 13), (16, 30), (33, 23)],  # P3/8
+                             [(30, 61), (62, 45), (59, 119)],  # P4/16
+                             [(116, 90), (156, 198), (373, 326)] ])  # P5/32
+    
+    # https://pytorch.org/docs/stable/generated/torch.nn.Module.html command+f register_buffer
+    # has the same result as self.anchors = anchors but, it's a way to register a buffer (make
+    # a variable available in runtime) that should not be considered a model parameter
+    STRIDE = [8, 16, 32]
+    
+    # https://github.com/ultralytics/yolov5/issues/2026
+    BALANCE = [4.0, 1.0, 0.4]
+    
+    @staticmethod
+    def transform_targets( input_tensor, bboxes, anchors, strides, ignore_iou_thresh, num_anchors_per_scale=3):
+        targets = [torch.zeros((num_anchors_per_scale, input_tensor[i].shape[2], input_tensor[i].shape[3], 6))
+                   for i in range(len(strides))]
+        
+        # bboxes is relative to a single batch --> (max_labels_batch, 5)
+        classes = bboxes[:, 0].tolist()
+        bboxes = bboxes[:, 1:]
+        # filtering only the real annotations --> remember what we have done with the collate function!
+        for i, e in enumerate(bboxes):
+            if e.sum() == 0:
+                classes = classes[:i]
+                bboxes = bboxes[:i]
+                break
+
+        for idx, box in enumerate(bboxes):
+            iou_anchors = iou_width_height(box[2:4], anchors)
+            anchor_indices = iou_anchors.argsort(descending=True, dim=0)
+            x, y, width, height, = box
+            has_anchor = [False] * 3
+            for anchor_idx in anchor_indices:
+                scale_idx = torch.div(anchor_idx, num_anchors_per_scale, rounding_mode="floor")
+                anchor_on_scale = anchor_idx % num_anchors_per_scale
+                scale_y = input_tensor[int(scale_idx)].shape[2]
+                scale_x = input_tensor[int(scale_idx)].shape[3]
+                i, j = int(scale_y * y), int(scale_x * x)
+                anchor_taken = targets[scale_idx][anchor_on_scale, i, j, 4]
+                if not anchor_taken and not has_anchor[scale_idx]:
+                    targets[scale_idx][anchor_on_scale, i, j, 4] = 1
+                    x_cell, y_cell = scale_x * x - j, scale_y * y - i
+                    width_cell, height_cell = (width * scale_x, height * scale_y,)
+                    box_coordinates = torch.tensor([x_cell, y_cell, width_cell, height_cell])
+                    targets[scale_idx][anchor_on_scale, i, j, 0:4] = box_coordinates
+                    targets[scale_idx][anchor_on_scale, i, j, 5] = int(classes[idx])
+                    has_anchor[scale_idx] = True
+                elif not anchor_taken and iou_anchors[anchor_idx] > ignore_iou_thresh:
+                    targets[scale_idx][anchor_on_scale, i, j, 4] = -1  # ignore prediction
+        return targets
+    
+    def __init__(self, hparams):
+
+        self.mse = nn.MSELoss()
+        self.BCE_cls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
+        self.BCE_obj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
+        self.sigmoid = nn.Sigmoid()
+        
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        
+        self.nc = hparams["num_classes"] # number of classes
+        self.nl = len(YOLO_Loss.ANCHORS) # number of scale/layers
+        self.anchors_d = YOLO_Loss.ANCHORS.clone().detach() # (3, 3, 2) --> they are exactly the anchor boxes, but modified
+        self.anchors = YOLO_Loss.ANCHORS.clone().detach().to("cpu")
+
+        self.na = self.anchors.reshape(9,2).shape[0] # number of anchors --> 9
+        self.num_anchors_per_scale = self.na // 3 # number of anchors for each scale --> 3
+        self.S = YOLO_Loss.STRIDE
+        self.ignore_iou_thresh = hparams["ignore_iou_thresh"]
+        
+        # https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml)
+        # https://github.com/ultralytics/yolov5/blob/master/utils/loss.py#L170)
+        # https://github.com/ultralytics/yolov5/blob/master/train.py#L232)
+        self.lambda_class = hparams["weight_class"] * (self.nc / 80 * 3 / self.nl) # scale to layers
+        self.lambda_obj = hparams["weight_obj"] * ((hparams["img_size"] / 640) ** 2 * 3 / self.nl) # scale to classes and layers
+        self.lambda_box = hparams["weight_box"] * (3 / self.nl) # scale to image size and layers
+
+        self.balance = YOLO_Loss.BALANCE
+
+    def __call__(self, preds, targets):
+
+        # we transform the targets in order to be able to compare them with the predictions output by the model
+        targets = [YOLO_Loss.transform_targets(preds, bboxes, self.anchors, self.S, self.ignore_iou_thresh, self.num_anchors_per_scale) for bboxes in targets]
+
+        t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
+        t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device,non_blocking=True)
+        t3 = torch.stack([target[2] for target in targets], dim=0).to(self.device,non_blocking=True)
+
+        loss = (
+            self.compute_loss(preds[0], t1, anchors=self.anchors_d[0], balance=self.balance[0])
+            + self.compute_loss(preds[1], t2, anchors=self.anchors_d[1], balance=self.balance[1])
+            + self.compute_loss(preds[2], t3, anchors=self.anchors_d[2], balance=self.balance[2])
+        )
+        return {"loss" : loss}
+
+    # TRAINING_LOSS --> the actual function which computes the overall loss
+    def compute_loss(self, preds, targets, anchors, balance):
+        # originally anchors have shape (3,2) --> 3 set of anchors of width and height
+        bs = preds.shape[0]
+        anchors = anchors.reshape(1, 3, 1, 1, 2)
+        
+        obj = targets[..., 4] == 1
+        pxy = (preds[..., 0:2].sigmoid() * 2) - 0.5
+        pwh = ((preds[..., 2:4].sigmoid() * 2) ** 2) * anchors
+        pbox = torch.cat((pxy[obj], pwh[obj]), dim=-1)
+        tbox = targets[..., 0:4][obj]
+
+        # ======================== #
+        #   FOR BOX COORDINATES    #
+        # ======================== #
+        iou = intersection_over_union(pbox, tbox, GIoU=True).squeeze()  # iou(prediction, target)
+        lbox = (1.0 - iou).mean()  # iou loss
+
+        # ======================= #
+        #   FOR OBJECTNESS SCORE  #
+        # ======================= #
+        iou = iou.detach().clamp(0)
+        targets[..., 4][obj] *= iou
+        lobj = self.BCE_obj(preds[..., 4], targets[..., 4]) * balance
+        
+        # ================== #
+        #   FOR CLASS LOSS   #
+        # ================== #
+        tcls = torch.zeros_like(preds[..., 5:][obj], device=self.device)
+        tcls[torch.arange(tcls.size(0)), targets[..., 5][obj].long()] = 1.0  # for torch > 1.11.0
+        lcls = self.BCE_cls(preds[..., 5:][obj], tcls)  # BCE
+
+        return (self.lambda_box * lbox + self.lambda_obj * lobj + self.lambda_class * lcls) * bs # like in YOLOv5 official code
+    
+
+class YOLO_Predict:
+    
+    def __init__(self, hparams):
+
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.anchors = URBE_Perception.ANCHORS
+        self.S = URBE_Perception.STRIDE
+        self.ignore_iou_thresh = hparams["ignore_iou_thresh"]
+        
+        
+        self.iou_threshold = hparams["iou_threshold"]
+        self.pred_threshold = hparams["pred_threshold"]
 
 
-class YOLOLoss:
-    def __init__(self, num_classes, img_size, anchors, strides, anchor_thre, balance):
-        super(YOLOLoss, self).__init__()
-        self.num_classes = num_classes
-        self.img_size = img_size
-        self.anchors = torch.tensor(anchors)
-        self.strides = strides
-        # ?
-        self.anchor_thre = anchor_thre
-        self.balance = balance
+    def __call__(self, out):
 
-        self.batch_size = 64
-        self.gr = 1.0
-        self.BCEcls = None
-        self.BCEobj = None
-        self.cn = 0.0  # class negative
-        self.pn = 1.0  # class positive
-        self.lambda_box = 0.05
-        self.lambda_obj = 1.0
-        self.lambda_cls = 0.0375
-
-    def predict(self, inputs, targets):
-        """
-        :param inputs: a list of prediction grids
-        :param targets: (bs, max_label, 5)
-        :return:
-        """
-        if self.BCEobj is None:
-            self.BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0]).type_as(targets))
-            self.BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([1.0]).type_as(targets))
-        nl = len(inputs)    # number of layers #3
-        na = len(self.anchors[0])   # number of anchors, every layer have the same number of anchors
-        n_gt = (targets.sum(dim=2) > 0).sum(dim=1)
-        nts = n_gt.sum()  # number of ground truths of the batch, cioè il numero totale di annotazioni del batch
-        bs = targets.shape[0] #batch size
-        #LOSSES
-        lbox = torch.zeros(1).type_as(targets) 
-        lobj = torch.zeros(1).type_as(targets)
-        lcls = torch.zeros(1).type_as(targets)
-
-        for i in range(nl):
-            prediction = inputs[i].view(bs, na, 5+self.num_classes, inputs[i].size(2), inputs[i].size(3)) \
-                .permute(0, 1, 3, 4, 2).contiguous()
-            inputs[i] = prediction # fa qualche modifica che non so bene cosa sia
-
-        targets = target2percent(targets, self.img_size) # una sorta di normalizzazione 
-        gts_list = []
-        for img_idx in range(bs): #all'interno del batch 
-            nt = n_gt[img_idx] # sarà il numero delle annotazioni di una singola immagine
-            gt_boxes = targets[img_idx, :nt, 1:5] #chiaro 
-            gt_classes = targets[img_idx, :nt, 0].unsqueeze(-1) #chiaro
-            gt_img_ids = torch.ones_like(gt_classes).type_as(gt_classes) * img_idx # l'idx dell'image è l'indice al'interno del batch
-            gt = torch.cat((gt_img_ids, gt_classes, gt_boxes), 1) #concateniamo 
-            gts_list.append(gt)
-        targets = torch.cat(gts_list, 0)
-
-        ai = torch.arange(na).type_as(targets)  # (na) anchor indice # dovrebbero essere 3 anchors diverse per ogni layer!
-        ai = ai.view(na, 1).repeat(1, nts)  # (na,1) # non è vero... è (na, nts)
-
-        # add the anchor indices in the last of prediction (6 to 7)
-        targets = targets.repeat(na, 1, 1)  # (nt,6) to (na,nt,6) # prima era (nts,6) --> mo diventa (na, nts, 6)
-        targets = torch.cat((targets, ai[:, :, None]), 2)  # (na,nts,7) 
-        # tensor([[[ 2,  3,  0],
-        #  [22,  2,  0],
-        #  [ 3,  5,  0],
-        #  [ 6,  3,  0]],
-
-        # [[ 2,  3,  1],
-        #  [22,  2,  1],
-        #  [ 3,  5,  1],
-        #  [ 6,  3,  1]],
-
-        # [[ 2,  3,  2],
-        #  [22,  2,  2],
-        #  [ 3,  5,  2],
-        #  [ 6,  3,  2]]])
-
-        g = 0.5  # bias
-        off = torch.tensor([[0, 0], [1, 0], [0, 1], [-1, 0], [0, -1]]).type_as(targets)  # (5,2)
-        off = off * g
-
-        gain = torch.ones(7).type_as(targets)
-        tcls, tbox, indices, anch = [], [], [], []
-        # qui in qualche modo andiamo a calcolarsi le prediction di YOLO --> tocca fare un po' di operazioni poichè li restituisce in modo strano
-        for i in range(nl): # per ogni layer 
-            # Both anchor and target move from image to feature map
-            anchor = self.anchors[i].type_as(targets)
-            # Anchor is a scale
-            anchor = anchor / self.strides[i]
-            # YOLO format is percentage. Turn it to absolute position in different feature maps.
-            gain[2:6] = torch.tensor(inputs[i].shape)[[3, 2, 3, 2]]  # xyxy gain # non so bene cosa fa 
-            t = targets * gain
-
-            if nts: # if have at least one annotation in the batch
-                
-                # choose targets which don't have large gap (factor)
-                r = t[:, :, 4:6] / anchor[:, None]  # wh ratio
-                j = torch.max(r, 1. / r).max(2)[0] < self.anchor_thre # da capire come ottenerlo
-
-                t = t[j]
-
-                # Center point position on feature map
-                gxy = t[:, 2:4]  # grid xy
-                gxi = gain[[2, 3]] - gxy  # Inverse
-
-                j, k = ((gxy % 1. < g) & (gxy > 1.)).T
-                l, m = ((gxi % 1. < g) & (gxi > 1.)).T
-                j = torch.stack((torch.ones_like(j), j, k, l, m))
-                t = t.repeat((5, 1, 1))[j]
-                offsets = (torch.zeros_like(gxy)[None] + off[:, None])[j]
-
-            else:
-                t = targets[0]
-                offsets = 0
-            # Define
-            b, c = t[:, :2].long().T  # image, class
-            gxy = t[:, 2:4]  # grid xy
-            gwh = t[:, 4:6]  # grid wh
-            gij = (gxy - offsets).long()
-            gi, gj = gij.T  # grid xy indices
-
-            # Append
-            a = t[:, 6].long()  # anchor indices
-            indices.append(
-                (b, a, gj.clamp_(0, gain[3] - 1), gi.clamp_(0, gain[2] - 1)))  # image, anchor, grid indices --> questo credo servi per ricondurci all'immagine, al tipo di ancora e in quale posizione!!!
-            # queste sono chiare cosa contengono --> alla fine è quello che  mi serve per calcolarmi una loss
-            tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
-            anch.append(anchor[a])  # anchors
-            tcls.append(c)  # class
-            
-        return inputs, tcls, tbox, indices, anch
-
-    def compute_loss(self, inputs, tcls, tbox, indices, anch):
-        for i, pi in enumerate(inputs):  # layer index, layer predictions
-            b, a, gj, gi = indices[i]  # image, anchor, gridy, gridx #accedo agli indici del layer i-esimo
-            tobj = torch.zeros_like(pi[..., 0]).type_as(pi)
-            n = b.shape[0]  # number of targets
-            if n:
-                ps = pi[b, a, gj, gi]  # prediction subset corresponding to targets !!!
-                # Regression
-                pxy = ps[:, :2].sigmoid() * 2. - 0.5
-                pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anch[i]
-                pbox = torch.cat((pxy, pwh), 1)  # predicted box --> ci siamo arrivati alla fine!
-                iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # iou(prediction, target)
-                lbox += (1.0 - iou).mean()  # iou loss
-
-                # Objectness
-                tobj[b, a, gj, gi] = (1.0 - self.gr) + self.gr * iou.detach().clamp(0).type_as(tobj)  # iou ratio
-
-                # Classification
-                if self.num_classes > 1:  # cls loss (only if multiple classes)
-                    t = torch.full_like(ps[:, 5:], self.cn).type_as(pi)  # targets
-                    t[range(n), tcls[i]] = self.pn
-                    lcls += self.BCEcls(ps[:, 5:], t)  # BCE
-
-            obji = self.BCEobj(pi[..., 4], tobj)
-            lobj += obji * self.balance[i]  # obj loss
-        lbox *= self.lambda_box
-        lobj *= self.lambda_obj
-        lcls *= self.lambda_cls
-        loss = lbox + lobj + lcls
-        return loss * self.batch_size, torch.cat((lbox, lobj, lcls, loss)).detach()
+        bboxes = self.cells_to_bboxes(out, self.anchors, self.S, self.device, is_pred=True, to_list=False)
+        bboxes = self.non_max_suppression(bboxes, self.iou_threshold, self.pred_threshold, to_list=False)
+        
+        return bboxes

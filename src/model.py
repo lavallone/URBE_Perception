@@ -11,14 +11,10 @@ import math
 import numpy as np
 import pytorch_lightning as pl
 from .data_module import URBE_DataModule
+from .loss import YOLO_Loss
 import random
-from torchmetrics import Precision
-
-# After the computation of the 'autoanchor' algorithm, we acknowledge that these are the "best" anchors (the default ones used in YOLOv5)
-# https://github.com/ultralytics/yolov5/blob/master/models/yolov5m.yaml
-ANCHORS = [ [(10, 13), (16, 30), (33, 23)],  # P3/8
-            [(30, 61), (62, 45), (59, 119)],  # P4/16
-            [(116, 90), (156, 198), (373, 326)] ]  # P5/32
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+from torchvision.ops import nms
 
 ########################################## BASIC BUILDING BLOCKS ##############################################
 ##                                                                                                           ##
@@ -248,19 +244,19 @@ class BaseConv(nn.Module):
 
 ## HEADs ##
 class SimpleHead(nn.Module):
-    def __init__(self, nc=3, anchors=(), ch=()):  # detection layer
+    def __init__(self, nc=3, ch=()):  # detection layer
         super(SimpleHead, self).__init__()
         self.nc = nc  # number of classes
-        self.nl = len(anchors)  # number of detection layers
-        self.naxs = len(anchors[0])
+        self.nl = len(URBE_Perception.ANCHORS)  # number of detection layers
+        self.naxs = len(URBE_Perception.ANCHORS[0])
 
         # https://pytorch.org/docs/stable/generated/torch.nn.Module.html command+f register_buffer
         # has the same result as self.anchors = anchors but, it's a way to register a buffer (make
         # a variable available in runtime) that should not be considered a model parameter
-        self.stride = [8, 16, 32]
+        self.stride = URBE_Perception.STRIDE
 
         # anchors are divided by the stride (anchors_for_head_1/8, anchors_for_head_1/16 etc.)
-        anchors_ = torch.tensor(anchors).float().view(self.nl, -1, 2) / torch.tensor(self.stride).repeat(6, 1).T.reshape(3, 3, 2)
+        anchors_ = torch.tensor(URBE_Perception.ANCHORS).float().view(self.nl, -1, 2) / torch.tensor(self.stride).repeat(6, 1).T.reshape(3, 3, 2)
         self.register_buffer('anchors', anchors_)  # shape(nl,na,2)
 
         self.out_convs = nn.ModuleList()
@@ -282,13 +278,13 @@ class SimpleHead(nn.Module):
         return x
     
 class DecoupledHead(nn.Module):
-    def __init__(self, nc=3, anchors=(), ch=()):  # detection layer
+    def __init__(self, nc=3, ch=()):  # detection layer
         super(DecoupledHead, self).__init__()
         self.nc = nc  # number of classes
-        self.nl = len(anchors)  # number of detection layers
-        self.naxs = len(anchors[0])
-        self.stride = [8, 16, 32]
-        anchors_ = torch.tensor(anchors).float().view(self.nl, -1, 2) / torch.tensor(self.stride).repeat(6, 1).T.reshape(3, 3, 2)
+        self.nl = len(URBE_Perception.ANCHORS)  # number of detection layers
+        self.naxs = len(URBE_Perception.ANCHORS[0])
+        self.stride = URBE_Perception.STRIDE
+        anchors_ = torch.tensor(URBE_Perception.ANCHORS).float().view(self.nl, -1, 2) / torch.tensor(self.stride).repeat(6, 1).T.reshape(3, 3, 2)
         self.register_buffer('anchors', anchors_)  # shape(nl,na,2)
         
         self.stems = nn.ModuleList() # stem layer performs a sort of compression mechanism
@@ -334,33 +330,45 @@ class DecoupledHead(nn.Module):
         return outputs
 
 class URBE_Perception(pl.LightningModule):
-    """ custom YOLOv5m (medium size) """
+    
+    # After the computation of the 'autoanchor' algorithm, we acknowledge that these are the "best" anchors (the default ones used in YOLOv5)
+    # https://github.com/ultralytics/yolov5/blob/master/models/yolov5m.yaml
+    ANCHORS = [ [(10, 13), (16, 30), (33, 23)],  # P3/8
+            [(30, 61), (62, 45), (59, 119)],  # P4/16
+            [(116, 90), (156, 198), (373, 326)] ]  # P5/32
+    
+    # https://pytorch.org/docs/stable/generated/torch.nn.Module.html command+f register_buffer
+    # has the same result as self.anchors = anchors but, it's a way to register a buffer (make
+    # a variable available in runtime) that should not be considered a model parameter
+    STRIDE = [8, 16, 32]
+    
+    """ custom YOLOv5 """
     def __init__(self, hparams):
         super(URBE_Perception, self).__init__()
         self.save_hyperparameters(hparams)
-        self.anchors = ANCHORS
+        # self.device = "cuda" if torch.cuda.is_available() else "cpu" # I think is a default nn.Module field
     
         self.backbone = Backbone(self.hparams.first_out)
         self.neck = Neck(self.hparams.first_out)
         if self.hparams.head == "simple":
-            self.head = SimpleHead(anchors=self.anchors, ch=(self.hparams.first_out * 4, self.hparams.first_out * 8, self.hparams.first_out * 16))
+            self.head = SimpleHead(ch=(self.hparams.first_out * 4, self.hparams.first_out * 8, self.hparams.first_out * 16))
         elif self.hparams.head == "decoupled":
-            self.head = DecoupledHead(anchors=self.anchors, ch=(self.hparams.first_out * 4, self.hparams.first_out * 8, self.hparams.first_out * 16))
+            self.head = DecoupledHead(ch=(self.hparams.first_out * 4, self.hparams.first_out * 8, self.hparams.first_out * 16))
         
         # if the backbone is pretrained I don't train it at all
         if self.hparams.load_pretrained:
             for param in self.backbone.parameters():
                 param.requires_grad = False
+                
+        self.loss = YOLO_Loss(self.hparams)
 
-        self.val_precision = Precision(task = 'binary', num_classes = 2)
+        self.mAP = MeanAveragePrecision()
 
     def forward(self, x): # we expect x to be the stack of images
         x, backbone_connection = self.backbone(x)
         features = self.neck(x, backbone_connection)
         return self.head(features) # [(batch, 3, 80, 80, 8), (batch, 3, 40, 40, 8), (batch, 3, 20, 20, 8)]
     
-    def predict(self, recon=None, batch = None):
-        return
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.hparams.lr, eps=self.hparams.adam_eps, weight_decay=self.hparams.wd)
@@ -374,25 +382,90 @@ class URBE_Perception(pl.LightningModule):
             },
         }
 
-    def loss_function(self,recon_x, x):
-        # the loss function is simply the main loss here
-        return {"loss": self.main_loss(recon_x, x)}
-
     def training_step(self, batch, batch_idx):
         imgs = batch['img']
-        recon = self(imgs)
-        loss = self.loss_function(recon, imgs)
+        out = self(imgs)
+        loss = self.loss(out, batch["labels"])
         # LOSS
         self.log_dict(loss)
-        return {'loss': loss['loss']}
+        return {"loss": loss["loss"]}
 
-    def training_epoch_end(self, outputs):
-        a = np.stack([x['anom'] for x in outputs]) 
-        a_std = np.stack([x['a_std'] for x in outputs]) 
-        self.avg_anomaly = a.mean()
-        self.std_anomaly = a_std.mean()
-        self.log_dict({"anom_avg": self.avg_anomaly, "anom_std": self.std_anomaly})
-        self.log("anomaly_threshold", self.hparams.threshold, on_step=False, on_epoch=True, prog_bar=True)
+    # =======================================================================================#
+    def make_grids(self, anchors, naxs, stride, nx=20, ny=20, i=0):
+
+        x_grid = torch.arange(nx)
+        x_grid = x_grid.repeat(ny).reshape(ny, nx)
+
+        y_grid = torch.arange(ny).unsqueeze(0)
+        y_grid = y_grid.T.repeat(1, nx).reshape(ny, nx)
+
+        xy_grid = torch.stack([x_grid, y_grid], dim=-1)
+        xy_grid = xy_grid.expand(1, naxs, ny, nx, 2)
+        anchor_grid = (anchors[i]*stride).reshape((1, naxs, 1, 1, 2)).expand(1, naxs, ny, nx, 2)
+
+        return xy_grid.to(self.device), anchor_grid.to(self.device)
+
+    def cells_to_bboxes(self, predictions, anchors, strides, device, is_pred=False, to_list=True):
+        num_out_layers = len(predictions)
+        grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialize
+        anchor_grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialize
+            
+        all_bboxes = []
+        for i in range(num_out_layers):
+            bs, naxs, ny, nx, _ = predictions[i].shape
+            stride = strides[i]
+            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, ny=ny, nx=nx, stride=stride, i=i)
+            if is_pred: # if they are the predicitons made by the model
+                # formula here: https://github.com/ultralytics/yolov5/issues/471
+                layer_prediction = predictions[i].sigmoid()
+                obj = layer_prediction[..., 4:5]
+                xy = (2 * (layer_prediction[..., 0:2]) + grid[i] - 0.5) * stride
+                wh = ((2*layer_prediction[..., 2:4])**2) * anchor_grid[i]
+                best_class = torch.argmax(layer_prediction[..., 5:], dim=-1).unsqueeze(-1)
+
+            else: # when we want to re-convert the ground_truth labels to images bboxes
+                predictions[i] = predictions[i].to(device, non_blocking=True)
+                obj = predictions[i][..., 4:5]
+                xy = (predictions[i][..., 0:2] + grid[i]) * stride
+                wh = predictions[i][..., 2:4] * stride
+                best_class = predictions[i][..., 5:6]
+
+            scale_bboxes = torch.cat((best_class, obj, xy, wh), dim=-1).reshape(bs, -1, 6)
+
+            all_bboxes.append(scale_bboxes)
+
+        return torch.cat(all_bboxes, dim=1).tolist() if to_list else torch.cat(all_bboxes, dim=1)
+
+    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=300, tolist=True):
+
+        """
+        new_bboxes = []
+        for box in bboxes:
+            if box[1] > threshold:
+                box[3] = box[0] + box[3]
+                box[2] = box[2] + box[4]
+                new_bboxes.append(box)
+        """
+
+        bboxes_after_nms = []
+        for boxes in batch_bboxes:
+            boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we predict the bbox!
+
+            # from xywh to x1y1x2y2 --> it is perfect fot wandb visualization!
+            boxes[..., 2:3] = boxes[..., 2:3] - (boxes[..., 4:5] / 2)
+            boxes[..., 3:4] = boxes[..., 3:4] - (boxes[..., 5:] / 2)
+            boxes[..., 5:6] = boxes[..., 5:6] + boxes[..., 3:4]
+            boxes[..., 4:5] = boxes[..., 4:5] + boxes[..., 2:3]
+
+            indices = nms(boxes=boxes[..., 2:] + boxes[..., 0:1], scores=boxes[..., 1], iou_threshold=iou_threshold)
+            boxes = boxes[indices]
+            # boxes are now osrted by objectness score thanks to torch metrics's nms
+
+            if boxes.shape[0] > max_detections: # we filter the maximum number of detections for a single batch
+                boxes = boxes[:max_detections, :]
+
+            bboxes_after_nms.append(boxes.tolist() if tolist else boxes)
+        return bboxes_after_nms if tolist else torch.cat(bboxes_after_nms, dim=0)
 
     # # images logging during training phase but used for validation images
     # def get_images_for_log(self, real, reconstructed):
@@ -411,25 +484,66 @@ class URBE_Perception(pl.LightningModule):
     # 			wandb.Image(couple.permute(1, 2, 0).detach().cpu().numpy(), mode="RGB")
     # 		)
     # 	return example_images
+    # =======================================================================================#
+    
+    def predict(self, predictions, targets):
+        targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.hparams.ignore_iou_thresh) for bboxes in targets]
+        # I want targets to be the same shape as predictions --> (bs, 3 , 80/40/20, 80/40/20, 6)
+        t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
+        t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device,non_blocking=True)
+        t3 = torch.stack([target[2] for target in targets], dim=0).to(self.device,non_blocking=True)
+        targets = [t1, t2, t3]
+        # Custom "Accuracy" for classes and objectness
+        tot_class_preds, correct_class = 0, 0
+        tot_obj, correct_obj = 0, 0
+        for i in range(3): # for each layer/scale
+            targets[i] = targets[i].to(self.device)
+            obj = targets[i][..., 4] == 1 # the total number of bbox to detect
+            # among the grid cells that contains an object, see if the most likely predicted class is the target one
+            correct_class += torch.sum(
+                torch.argmax(predictions[i][..., 5:][obj], dim=-1) == targets[i][..., 5][obj]
+            )
+            tot_class_preds += torch.sum(obj)
+            # among the grid cells that contains an object, see if the cell is predicted as a cell which detects an object
+            obj_preds = torch.sigmoid(predictions[i][..., 4]) > self.hparams.conf_threshold # is the model confident that is detecting an object?
+            correct_obj += torch.sum(obj_preds[obj] == targets[i][..., 4][obj])
+            tot_obj += torch.sum(obj)
+        
+        # mAP_50
+        pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True, to_list=False)
+        true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False, to_list=False)
 
-    # def validation_step(self, batch, batch_idx):
-    # 	imgs = batch['img']
-    # 	recon_imgs = self(imgs)
-    # 	# LOSS
-    # 	self.log("val_loss", self.loss_function(recon_imgs, imgs)["loss"], on_step=False, on_epoch=True, batch_size=imgs.shape[0])
-    # 	# RECALL, PRECISION, F1 SCORE
-    # 	pred = self.anomaly_prediction(imgs, recon_imgs)
-    # 	# good practice to follow with pytorch_lightning for logging values each iteration!
-      # 	# https://github.com/Lightning-AI/lightning/issues/4396
-    # 	self.val_precision.update(pred, batch['label'])
-    # 	self.log("precision", self.val_precision, on_step=False, on_epoch=True, prog_bar=True, batch_size=imgs.shape[0])
-    # 	# IMAGES
-    # 	if self.hparams.log_image_each_epoch!=0:
-    # 		images = self.get_images_for_log(imgs[0:self.hparams.log_images], recon_imgs[0:self.hparams.log_images])
-    # 		return {"images": images}
-    # 	else:
-    # 		return None
+        pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
+        true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
+        
+        # devo solo capire come sono queste bboxes... normalizzate o no?
+        pred_dict = dict(boxes=pred_boxes[..., 2:], scores=pred_boxes[..., 1], labels=pred_boxes[..., 0],)
+        true_dict = dict(boxes=true_boxes[..., 2:], labels=true_boxes[..., 0],)
+        
+        return {"mAP" : (pred_dict, true_dict) , "accuracy" : (tot_class_preds, correct_class, tot_obj, correct_obj)}
 
+    def validation_step(self, batch, batch_idx):
+        imgs = batch['img']
+        out = self(imgs)
+        val_loss = self.loss(out, batch["labels"])
+    	
+        # LOSS
+        self.log("val_loss", val_loss["loss"], on_step=False, on_epoch=True, batch_size=imgs.shape[0])
+    	
+        # Metrics
+        pred = self.predict(out, batch['labels'])
+        self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        self.mAP.update(pred["mAP"][0], pred["mAP"][1])
+        self.log("mAP_50", self.mAP.compute()["map_50"], on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size) # in caso metti self.mAP["map_50"]
+    	# # IMAGES
+    	# if self.hparams.log_image_each_epoch!=0:
+    	# 	images = self.get_images_for_log(imgs[0:self.hparams.log_images], recon_imgs[0:self.hparams.log_images])
+    	# 	return {"images": images}
+    	# else:
+    	# 	return None
+
+    # we keep it only for image logging purposes
     # def validation_epoch_end(self, outputs):
     # 	if self.hparams.log_image_each_epoch!=0 and self.global_step%self.hparams.log_image_each_epoch==0:
     # 		# we randomly select one batch index
