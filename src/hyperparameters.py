@@ -9,7 +9,7 @@ class Hparams:
     max_number_images: int = 150#3500
     num_classes: int = 3 # number of classes in the dataset
     augmentation: bool = False # apply augmentation strategy to input images and bounding boxes
-    img_size: int = 640  # suggested size of image for YOLOv5
+    img_size: int = 640  # suggested size of image for YOLOv5 or 416--> by reducing the image size to a multiple of 32, you can get a higher frame rate. Here comes the trade-off between Speed and Accuracy. You can reduce the image size until you receive satisfactory accuracy for your use-case.
     img_channels: int = 3 # RGB channels
     batch_size: int = 1 # size of the batches
     n_cpu: int = 8 # number of cpu threads to use for the dataloaders
@@ -40,3 +40,7 @@ class Hparams:
     # LOGGING params
     log_images: int = 4 # how many images to log each time
     log_image_each_epoch: int = 0 # epochs interval we wait to log images
+    
+    # INFERENCE params
+    reduce_inference: bool = False
+    precision: int = 32
