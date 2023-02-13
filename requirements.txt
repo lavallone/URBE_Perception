@@ -1,4 +1,4 @@
 pytorch-lightning==1.1.7
 numpy
+wandb
 matplotlib==3.5.2
-cv2

@@ -34,7 +34,7 @@ class Hparams:
     wd: float = 5e-4 #1e-6 # weight decay as regulation strategy
     
     # PREDICT params
-    nms_iou_thresh: float = 0.9
+    nms_iou_thresh: float = 0.6
     conf_threshold: float = 0.8 #.01 to get all possible bboxes, trade-off metrics/speed --> we choose metrics
     
     # LOGGING params
