@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class Hparams:
     # dataloader params
-    dataset_dir: str = "dataset/URBE_dataset/images"
+    dataset_dir: str = "dataset/URBE_dataset_light/images"
     annotations_file_path: str = "dataset/URBE_dataset/labels/COCO/annotations.json"
     max_number_images: int = 150#3500
     num_classes: int = 3 # number of classes in the dataset
