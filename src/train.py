@@ -1,6 +1,5 @@
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning import Trainer
 from pytorch_lightning.loggers.wandb import WandbLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -28,13 +27,13 @@ def train_model(data, model, experiment_name, patience, metric_to_monitor, mode,
     if model.hparams.resume_from_checkpoint is not None:
         trainer = pl.Trainer(
             logger=logger, max_epochs=epochs, log_every_n_steps=1, gpus=n_gpus,
-            callbacks=callbacks, precison = model.hparams.precision,
+            callbacks=callbacks, precision = model.hparams.precision,
             num_sanity_val_steps=0, resume_from_checkpoint=model.hparams.resume_from_checkpoint
             )
     else:
         trainer = pl.Trainer(
             logger=logger, max_epochs=epochs, log_every_n_steps=1, gpus=n_gpus,
-            callbacks=callbacks, precison = model.hparams.precision,
+            callbacks=callbacks, precision = model.hparams.precision,
             num_sanity_val_steps=0,
             )
     trainer.fit(model, data)

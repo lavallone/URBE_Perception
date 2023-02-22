@@ -18,13 +18,15 @@ def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
     anchors /= 640
     if strided_anchors:
         anchors = anchors.reshape(9, 2) * torch.tensor(stride).repeat(6, 1).T.reshape(9, 2)
-
+    anchors = anchors.to("cuda")
     intersection = torch.min(gt_box[..., 0], anchors[..., 0]) * torch.min(
         gt_box[..., 1], anchors[..., 1]
     )
+    
     union = (
         gt_box[..., 0] * gt_box[..., 1] + anchors[..., 0] * anchors[..., 1] - intersection
     )
+    
     # intersection/union shape (9,)
     return intersection / union
 
@@ -115,7 +117,7 @@ class YOLO_Loss:
     BALANCE = [4.0, 1.0, 0.4]
     
     @staticmethod
-    def transform_targets( input_tensor, bboxes, anchors, strides, ignore_iou_thresh, num_anchors_per_scale=3):
+    def transform_targets(input_tensor, bboxes, anchors, strides, ignore_iou_thresh, num_anchors_per_scale=3):
         targets = [torch.zeros((num_anchors_per_scale, input_tensor[i].shape[2], input_tensor[i].shape[3], 6))
                    for i in range(len(strides))]
         
@@ -186,10 +188,10 @@ class YOLO_Loss:
         # we transform the targets in order to be able to compare them with the predictions output by the model
         targets = [YOLO_Loss.transform_targets(preds, bboxes, self.anchors, self.S, self.ignore_iou_thresh, self.num_anchors_per_scale) for bboxes in targets]
 
-        t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
-        t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device,non_blocking=True)
-        t3 = torch.stack([target[2] for target in targets], dim=0).to(self.device,non_blocking=True)
-
+        t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device, non_blocking=True)
+        t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device, non_blocking=True)
+        t3 = torch.stack([target[2] for target in targets], dim=0).to(self.device, non_blocking=True)
+        
         loss = (
             self.compute_loss(preds[0], t1, anchors=self.anchors_d[0], balance=self.balance[0])
             + self.compute_loss(preds[1], t2, anchors=self.anchors_d[1], balance=self.balance[1])
@@ -202,6 +204,7 @@ class YOLO_Loss:
         # originally anchors have shape (3,2) --> 3 set of anchors of width and height
         bs = preds.shape[0]
         anchors = anchors.reshape(1, 3, 1, 1, 2)
+        anchors = anchors.to("cuda")
         
         obj = targets[..., 4] == 1
         pxy = (preds[..., 0:2].sigmoid() * 2) - 0.5
@@ -230,25 +233,3 @@ class YOLO_Loss:
         lcls = self.BCE_cls(preds[..., 5:][obj], tcls)  # BCE
 
         return (self.lambda_box * lbox + self.lambda_obj * lobj + self.lambda_class * lcls) * bs # like in YOLOv5 official code
-    
-
-class YOLO_Predict:
-    
-    def __init__(self, hparams):
-
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.anchors = URBE_Perception.ANCHORS
-        self.S = URBE_Perception.STRIDE
-        self.ignore_iou_thresh = hparams["ignore_iou_thresh"]
-        
-        
-        self.iou_threshold = hparams["iou_threshold"]
-        self.pred_threshold = hparams["pred_threshold"]
-
-
-    def __call__(self, out):
-
-        bboxes = self.cells_to_bboxes(out, self.anchors, self.S, self.device, is_pred=True, to_list=False)
-        bboxes = self.non_max_suppression(bboxes, self.iou_threshold, self.pred_threshold, to_list=False)
-        
-        return bboxes

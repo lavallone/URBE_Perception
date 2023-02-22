@@ -1,16 +1,10 @@
-from collections import Counter
 import torch
 from torch import optim, nn
-import torch.nn.functional as F
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.transforms import Resize
 from torchvision.transforms import InterpolationMode
-import torchvision.utils
 import wandb
-import math
-import numpy as np
 import pytorch_lightning as pl
-from .data_module import URBE_DataModule
 from .loss import YOLO_Loss
 import random
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
@@ -24,7 +18,6 @@ import torchvision.transforms as T
 ## Thanks to https://github.com/AlessandroMondin/YOLOV5m :)                                                  ##
 ##                                                                                                           ##
 ###############################################################################################################
-
 # performs a convolution, a batch_norm and then applies a SiLU activation function
 class CBL(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, stride, padding):
@@ -151,11 +144,10 @@ class C3_NECK(nn.Module):
 
     def forward(self, x):
         return self.c_out(torch.cat([self.silu_block(x), self.c_skipped(x)], dim=1))
-
 ##############################################################################################################################
 
-# They are just a composition of the above "basic building blocks"
-## BACKBONE ##
+
+####################################################### BACKBONE #############################################################
 class Backbone(nn.Module):
     def __init__(self, first_out=48):
         super().__init__()
@@ -184,7 +176,7 @@ class Backbone(nn.Module):
                 backbone_connection.append(x)
         return x, backbone_connection
 
-## NECK ##
+######################################################### NECK ###############################################################
 class Neck(nn.Module):
     def __init__(self, first_out=48):
         super().__init__()
@@ -223,27 +215,7 @@ class Neck(nn.Module):
                 x = layer(x)
         return outputs
 
-################################################################################################################
-# a BASIC convolutional block which computes also Normalization and Activation afterwards
-class BaseConv(nn.Module):
-	"""A Convolution2d -> Normalization -> Activation"""
-	def __init__(self, in_channels, out_channels, ksize, stride, padding=None, groups=1, bias=False, norm="bn", act="silu"):
-		super().__init__()
-		pad = (ksize - 1) // 2 if padding is None else padding
-		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=ksize, stride=stride, padding=pad, groups=groups, bias=bias,)
-		self.norm = nn.BatchNorm2d(out_channels, eps=1e-3, momentum=0.03)
-		self.act = nn.SiLU(inplace=True)
-	def forward(self, x):
-		if self.norm is None and self.act is None:
-			return self.conv(x)
-		elif self.act is None:
-			return self.norm(self.conv(x))
-		elif self.norm is None:
-			return self.act(self.conv(x))
-		return self.act(self.norm(self.conv(x)))
-################################################################################################################
-
-## HEADs ##
+######################################################### HEADs ##############################################################
 class SimpleHead(nn.Module):
     def __init__(self, nc=3, ch=()):  # detection layer
         super(SimpleHead, self).__init__()
@@ -277,7 +249,25 @@ class SimpleHead(nn.Module):
             x[i] = x[i].view(bs, self.naxs, (5+self.nc), grid_y, grid_x).permute(0, 1, 3, 4, 2).contiguous()
 
         return x
-    
+
+# a BASIC convolutional block which computes also Normalization and Activation afterwards
+class BaseConv(nn.Module):
+	"""A Convolution2d -> Normalization -> Activation"""
+	def __init__(self, in_channels, out_channels, ksize, stride, padding=None, groups=1, bias=False, norm="bn", act="silu"):
+		super().__init__()
+		pad = (ksize - 1) // 2 if padding is None else padding
+		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=ksize, stride=stride, padding=pad, groups=groups, bias=bias,)
+		self.norm = nn.BatchNorm2d(out_channels, eps=1e-3, momentum=0.03)
+		self.act = nn.SiLU(inplace=True)
+	def forward(self, x):
+		if self.norm is None and self.act is None:
+			return self.conv(x)
+		elif self.act is None:
+			return self.norm(self.conv(x))
+		elif self.norm is None:
+			return self.act(self.conv(x))
+		return self.act(self.norm(self.conv(x)))
+
 class DecoupledHead(nn.Module):
     def __init__(self, nc=3, ch=()):  # detection layer
         super(DecoupledHead, self).__init__()
@@ -329,6 +319,7 @@ class DecoupledHead(nn.Module):
             output = output.view(bs, self.naxs, (5+self.nc), grid_y, grid_x).permute(0, 1, 3, 4, 2).contiguous()
             outputs.append(output)
         return outputs
+##############################################################################################################################
 
 class URBE_Perception(pl.LightningModule):
     
@@ -347,7 +338,6 @@ class URBE_Perception(pl.LightningModule):
     def __init__(self, hparams):
         super(URBE_Perception, self).__init__()
         self.save_hyperparameters(hparams)
-        # self.device = "cuda" if torch.cuda.is_available() else "cpu" # I think is a default nn.Module field
     
         self.backbone = Backbone(self.hparams.first_out)
         self.neck = Neck(self.hparams.first_out)
@@ -356,13 +346,12 @@ class URBE_Perception(pl.LightningModule):
         elif self.hparams.head == "decoupled":
             self.head = DecoupledHead(ch=(self.hparams.first_out * 4, self.hparams.first_out * 8, self.hparams.first_out * 16))
         
-        # if the backbone is pretrained I don't train it at all
+        # if the backbone is pretrained I don't train it at all!
         if self.hparams.load_pretrained:
             for param in self.backbone.parameters():
                 param.requires_grad = False
                 
         self.loss = YOLO_Loss(self.hparams)
-
         self.mAP = MeanAveragePrecision()
 
     def forward(self, x): # we expect x to be the stack of images
@@ -370,7 +359,6 @@ class URBE_Perception(pl.LightningModule):
         features = self.neck(x, backbone_connection)
         return self.head(features) # [(batch, 3, 80, 80, 8), (batch, 3, 40, 40, 8), (batch, 3, 20, 20, 8)]
     
-
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.hparams.lr, eps=self.hparams.adam_eps, weight_decay=self.hparams.wd)
         reduce_lr_on_plateau = ReduceLROnPlateau(optimizer, mode='min',verbose=True, min_lr=self.hparams.min_lr)
@@ -385,6 +373,8 @@ class URBE_Perception(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         imgs = batch['img']
+        print("SSSSSSSSS")
+        print(imgs.shape[0])
         out = self(imgs)
         loss = self.loss(out, batch["labels"])
         # LOSS
@@ -485,6 +475,7 @@ class URBE_Perception(pl.LightningModule):
     # =======================================================================================#
     
     def predict(self, predictions, targets):
+        print(targets.shape)
         targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.hparams.ignore_iou_thresh) for bboxes in targets]
         # I want targets to be the same shape as predictions --> (bs, 3 , 80/40/20, 80/40/20, 6)
         t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
@@ -508,14 +499,22 @@ class URBE_Perception(pl.LightningModule):
             tot_obj += torch.sum(obj)
         
         # mAP_50
+        print(predictions[0].shape)
+        print(predictions[1].shape)
+        print(predictions[2].shape)
+        print("·····················.")
         pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True, to_list=False)
         true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False, to_list=False)
 
         pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
         true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
-        
-        pred_dict = dict(boxes=pred_boxes[..., 2:], scores=pred_boxes[..., 1], labels=pred_boxes[..., 0],)
-        true_dict = dict(boxes=true_boxes[..., 2:], labels=true_boxes[..., 0],)
+        print(pred_boxes)
+        print(pred_boxes.shape)
+        print("----------")
+        print(true_boxes)
+        print(true_boxes.shape)
+        pred_dict = [dict(boxes=pred_boxes[..., 2:], scores=pred_boxes[..., 1], labels=pred_boxes[..., 0],)]
+        true_dict = [dict(boxes=true_boxes[..., 2:], labels=true_boxes[..., 0],)]
         
         return {"mAP" : (pred_dict, true_dict) , "accuracy" : (tot_class_preds, correct_class, tot_obj, correct_obj)}
 
