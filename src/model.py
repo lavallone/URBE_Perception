@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from .loss import YOLO_Loss, intersection_over_union
 import random
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
-from torchvision.ops import nms
+from torchvision.ops import batched_nms
 import torchvision.transforms as T
 
 ########################################## BASIC BUILDING BLOCKS ##############################################
@@ -439,38 +439,20 @@ class URBE_Perception(pl.LightningModule):
             boxes[..., 4:5] = boxes[..., 2:3] + boxes[..., 4:5]
             boxes[..., 5:6] = boxes[..., 3:4] + boxes[..., 5:6]
             
-            if is_pred: # I perform nms
-                boxes = sorted(boxes, key=lambda x: x[1], reverse=True)
-                bboxes_after_nms_batch = []
-                while boxes:
-                    print("nms execution")
-                    chosen_box = boxes.pop(0)
-                    
-                    l = []
-                    for box in boxes:
-                        print("box")
-                        iou = intersection_over_union(chosen_box[2:], box[2:], box_format="corners")
-                        print(iou)
-                        if box[0]!=chosen_box[0] or iou < iou_threshold:
-                            l.append(box)  
-                    boxes = l     
-                    # boxes = [box for box in boxes if (box[0]!=chosen_box[0]) # if they are not of the same class we don't compare them
-                    #                                   or (intersection_over_union(chosen_box[2:], box[2:], box_format="corners")
-                    #                                        < iou_threshold )]
-                    bboxes_after_nms_batch.append(chosen_box)
-                if bboxes_after_nms_batch==[]:
+            # we perform non maxima suppression(nms)
+            if is_pred:
+                indices = batched_nms(boxes[..., 2:], boxes[..., 1], boxes[..., 0].int(), iou_threshold)
+                
+                if indices.numel() == 0:
                     print("no predictions!!!!")
-                    bboxes_after_nms.append(bboxes_after_nms_batch)
-                    continue
-                bboxes_after_nms_batch = torch.stack(bboxes_after_nms_batch)
-
-                if bboxes_after_nms_batch.shape[0] > max_detections: # we filter the maximum number of detections for a single image
-                    bboxes_after_nms_batch = bboxes_after_nms_batch[:max_detections, :]
-
-                bboxes_after_nms.append(bboxes_after_nms_batch)
-            # we're dealing with targets
-            else:
-                bboxes_after_nms.append(boxes)
+                    boxes = torch.empty([])
+                else:
+                    boxes = boxes[indices]
+                    
+                if boxes.shape[0] > max_detections: # we set a maximum number of predictions
+                    boxes = boxes[:max_detections, :]
+            
+            bboxes_after_nms.append(boxes)
         return bboxes_after_nms # return a list of tensors --> len(bboxes_after_nms) == batch_size
     
     # images logging during training phase but used for validation images
@@ -482,16 +464,14 @@ class URBE_Perception(pl.LightningModule):
         example_images = []
         for i, bbox in enumerate(bboxes): # for each image of the batch
             ris = { "predictions" : {"box_data" : [], "class_labels" : {0 : "vehicle" , 1 : "person", 2 : "motorbike"}} }
-            for box, label in zip(bbox, labels[i]): # for each bbox of the particular image
-                print(box)
-                print(label)
-                position = {"minX": box[0], "maxX": box[2] , "minY": box[1], "maxY": box[3]}
+            for box, label, score in zip(bbox, labels[i], scores[i]): # for each bbox of the particular image
+                position = {"minX": box[0].item(), "maxX": box[2].item(), "minY": box[1].item(), "maxY": box[3].item()}
                 class_id = int(label)
-                #score  = float(scores[i])
+                score  = float(score)
                 box_caption = ris["predictions"]["class_labels"][class_id]
-                x = {"position" : position, "domain" : "pixel", "class_id" : class_id, "box_caption" : box_caption, "scores" : {"score" : 1}}
+                x = {"position" : position, "domain" : "pixel", "class_id" : class_id, "box_caption" : box_caption, "scores" : {"score" : score}}
                 ris["predictions"]["box_data"].append(x)
-            example_images.append(wandb.Image(wandb.Image(images_list[i], boxes=ris)))
+            example_images.append(wandb.Image(images_list[i], boxes=ris))
         return example_images
     # =======================================================================================#
     
@@ -503,40 +483,42 @@ class URBE_Perception(pl.LightningModule):
         t3 = torch.stack([target[2] for target in targets], dim=0).to(self.device,non_blocking=True)
         targets = [t1, t2, t3] # all the batches are grouped according to the scale
         
-        ## Custom "Accuracy" for classes and objectness ##
-        tot_class_preds, correct_class = 0, 0
+        ## Custom "ACCURACY" for classes and objectness ##
+        tot_class, correct_class = 0, 0 # total number of objects to be predicted and the  number of objects to be correctly predicted
         tot_obj, correct_obj = 0, 0
-        # for i in range(3): # for each layer/scale
-        #     targets[i] = targets[i].to(self.device)
-        #     obj = targets[i][..., 4] == 1 # the total number of bbox to detect
-        #     # among the grid cells that contains an object, see if the most likely predicted class is the target one
-        #     correct_class += torch.sum(
-        #         torch.argmax(predictions[i][..., 5:][obj], dim=-1) == targets[i][..., 5][obj]
-        #     )
-        #     tot_class_preds += torch.sum(obj)
-        #     # among the grid cells that contains an object, see if the cell is predicted as a cell which detects an object
-        #     obj_preds = torch.sigmoid(predictions[i][..., 4]) > self.hparams.conf_threshold # is the model confident that is detecting an object?
-        #     correct_obj += torch.sum(obj_preds[obj] == targets[i][..., 4][obj])
-        #     tot_obj += torch.sum(obj)
+        for i in range(3): # for each layer/scale
+            targets[i] = targets[i].to(self.device)
+            obj = targets[i][..., 4] == 1 # mask for the target bboxes
+            tot_class += torch.sum(obj)
+            tot_obj += torch.sum(obj)
+            
+            # among the grid cells that contains an object, see if the most likely predicted class is the target one
+            correct_class += torch.sum(
+                torch.argmax(predictions[i][..., 5:][obj], dim=-1) == targets[i][..., 5][obj]
+            )
+            
+            # we filter out the objects that are not "actual" predictions for the model and
+            # we change the objectness score of the kept ones to 1
+            obj_preds = torch.sigmoid(predictions[i][..., 4]) > self.hparams.conf_threshold
+            # among the grid cells that contains an object, see if the cell is predicted as a cell which detects an object
+            correct_obj += torch.sum(obj_preds[obj] == targets[i][..., 4][obj])
         
         ## mAP_50 ##
-        pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True) # (bs, 25200, 6)
-        true_boxes = (self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False)) # I only take one layer! --> (bs, 20*20*3, 6)
-        # both the predictions and the targets are (bs, 25200, 6) --> where 25200 is the number of total cells for each image we look for an object
-        # predictions are for all the three layers
-        
-        pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=300, is_pred=True)
-        true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=300, is_pred=False)
-        
+        pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True) # (bs, 25200, 6) --> we use all the three layers
+        true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False) # (bs, 20*20*3, 6)
+        # after 'cell_to_boxes' the bboxes are set for 640x640 image size (indeed not normalized)
+        pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, is_pred=True)
+        true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, is_pred=False)
+
         pred_dict_list = []
         for i in range(len(pred_boxes)):
-            if pred_boxes[i] == []: # if the model hasn't predict any bboxes
+            if pred_boxes[i].numel() == 0: # if the model hasn't predict any bboxes
                 pred_dict_list.append( dict(boxes=torch.tensor([]).to("cuda"), scores=torch.tensor([]).to("cuda"), labels=torch.tensor([]).to("cuda"),) )
             else:
                 pred_dict_list.append( dict(boxes=pred_boxes[i][..., 2:], scores=pred_boxes[i][..., 1], labels=pred_boxes[i][..., 0],) )
         true_dict_list = [ dict(boxes=true_boxes[i][..., 2:], labels=true_boxes[i][..., 0],) for i in range(len(true_boxes)) ]
         
-        return {"mAP" : (pred_dict_list, true_dict_list) , "accuracy" : (tot_class_preds, correct_class, tot_obj, correct_obj)}
+        return {"mAP" : (pred_dict_list, true_dict_list) , "accuracy" : (tot_class, correct_class, tot_obj, correct_obj)}
 
     def validation_step(self, batch, batch_idx):
         imgs = batch['img']
@@ -548,17 +530,16 @@ class URBE_Perception(pl.LightningModule):
     	
         # METRICS
         pred = self.predict(out, batch['labels'])
-        #self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
-        #self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.mAP.update(pred["mAP"][0], pred["mAP"][1])
         self.log("mAP_50", self.mAP.compute()["map_50"], on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size) # in caso metti self.mAP["map_50"]
         
      	# IMAGES
         if self.hparams.log_image_each_epoch != 0:
-            bboxes = [e["boxes"] for e in (pred["mAP"][1][0:self.hparams.log_images]) ]
-            labels = [e["labels"] for e in (pred["mAP"][1][0:self.hparams.log_images]) ]
-            #scores = [e["scores"] for e in (pred["mAP"][1][0:self.hparams.log_images]) ]
-            scores=None
+            bboxes = [e["boxes"] for e in (pred["mAP"][0][0:self.hparams.log_images]) ]
+            labels = [e["labels"] for e in (pred["mAP"][0][0:self.hparams.log_images]) ]
+            scores = [e["scores"] for e in (pred["mAP"][0][0:self.hparams.log_images]) ]
             images = self.get_images_for_log(imgs[0:self.hparams.log_images], bboxes, labels, scores)
             return {"images": images}
         else:

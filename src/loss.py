@@ -34,6 +34,7 @@ def iou_width_height(gt_box, anchors, strided_anchors=False, stride=[8, 16, 32])
     return intersection / union
 
 # added the possibility of computing also GIoU, DIoU and CIoU!
+# we only use this function for the loss during training
 def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
     """
     This function calculates intersection over union (iou) given pred boxes
@@ -172,9 +173,10 @@ class YOLO_Loss:
     
     def __init__(self, hparams):
 
-        self.mse = nn.MSELoss()
+        #self.mse = nn.MSELoss()
         self.BCE_cls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
         self.BCE_obj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
+        self.BCE_noobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
         self.sigmoid = nn.Sigmoid()
         
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -197,6 +199,7 @@ class YOLO_Loss:
         self.lambda_box = hparams["weight_box"] * (3 / self.nl) # scale to image size and layers
 
         self.balance = YOLO_Loss.BALANCE
+        self.add_no_obj_loss = hparams["add_no_obj_loss"]
 
     def __call__(self, preds, targets):
 
@@ -207,6 +210,7 @@ class YOLO_Loss:
         t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device, non_blocking=True)
         t3 = torch.stack([target[2] for target in targets], dim=0).to(self.device, non_blocking=True)
         
+        # we compute it layer by layer...
         loss = (
             self.compute_loss(preds[0], t1, anchors=self.anchors_d[0], balance=self.balance[0])
             + self.compute_loss(preds[1], t2, anchors=self.anchors_d[1], balance=self.balance[1])
@@ -214,37 +218,49 @@ class YOLO_Loss:
         )
         return {"loss" : loss}
 
-    # TRAINING_LOSS --> the actual function which computes the overall loss
+    # the actual function which computes the TRAINING loss
     def compute_loss(self, preds, targets, anchors, balance):
-        # originally anchors have shape (3,2) --> 3 set of anchors of width and height
         bs = preds.shape[0]
+        # originally anchors have shape (3,2) --> 3 set of anchors of width and height
         anchors = anchors.reshape(1, 3, 1, 1, 2)
         anchors = anchors.to("cuda")
         
         obj = targets[..., 4] == 1
+        if self.add_no_obj_loss:
+            noobj = targets[..., 4] == 0
+        
         pxy = (preds[..., 0:2].sigmoid() * 2) - 0.5
         pwh = ((preds[..., 2:4].sigmoid() * 2) ** 2) * anchors
         pbox = torch.cat((pxy[obj], pwh[obj]), dim=-1)
         tbox = targets[..., 0:4][obj]
+        
+        # iou computation
+        iou = intersection_over_union(pbox, tbox, box_format="coco", GIoU=True).squeeze()
 
         # ======================== #
         #   FOR BOX COORDINATES    #
         # ======================== #
-        iou = intersection_over_union(pbox, tbox, box_format="coco", GIoU=True).squeeze()  # iou(prediction, target)
+        # (Aladdin does something weird with the targets for the iou computations for the gradient flow)
         lbox = (1.0 - iou).mean()  # iou loss
 
         # ======================= #
         #   FOR OBJECTNESS SCORE  #
         # ======================= #
         iou = iou.detach().clamp(0)
-        targets[..., 4][obj] *= iou
+        targets[..., 4][obj] *= iou # instead of simply having objectness=1 for the targets
         lobj = self.BCE_obj(preds[..., 4], targets[..., 4]) * balance
+        
+        # ======================= #
+        #   FOR NO_OBJECTNESS SCORE  #
+        # ======================= #
+        if self.add_no_obj_loss:
+            lnoobj = self.BCE_noobj(preds[..., 4], targets[..., 4]) * balance
         
         # ================== #
         #   FOR CLASS LOSS   #
         # ================== #
         tcls = torch.zeros_like(preds[..., 5:][obj], device=self.device)
         tcls[torch.arange(tcls.size(0)), targets[..., 5][obj].long()] = 1.0  # for torch > 1.11.0
-        lcls = self.BCE_cls(preds[..., 5:][obj], tcls)  # BCE
+        lcls = self.BCE_cls(preds[..., 5:][obj], tcls)
 
         return (self.lambda_box * lbox + self.lambda_obj * lobj + self.lambda_class * lcls) * bs # like in YOLOv5 official code
