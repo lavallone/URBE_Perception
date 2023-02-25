@@ -43,14 +43,12 @@ class URBE_Dataset(Dataset):
 			ann_list = list(filter(lambda x: x["image_id"] == image_id, self.annotations["annotations"]))
 			labels = []
 			for ann in ann_list:
-				# since we Resize the image, we need to also change their bounding boxes...
-				x1 = ann["bbox"][0] / (1280/self.hparams.img_size) # x1
-				y1 = ann["bbox"][1] / (720/self.hparams.img_size) # x2
-				x2 = x1 + ann["bbox"][2] / (1280/self.hparams.img_size)
-				y2 = y1 + ann["bbox"][3] / (720/self.hparams.img_size)
-				w = x2 - x1 # w
-				h = y2 - y1 # h
-				labels.append( [ann["category_id"], round(x1/self.hparams.img_size, 2), round(y1/self.hparams.img_size, 2), round(w/self.hparams.img_size, 2), round(h/self.hparams.img_size, 2)] ) # bboxes need to be normalized
+				# we normalize the bounding boxes...
+				x1 = ann["bbox"][0] / 1280 # x1
+				y1 = ann["bbox"][1] / 720 # x2
+				w = ann["bbox"][2] / 1280
+				h = ann["bbox"][3] / 720
+				labels.append( [ann["category_id"], x1, y1, w, h] ) # bboxes need to be normalized
 			self.data.append({"id" : image_id, "img" : img, "time" : time, "file_name" : file_name, "labels" : labels})
 	
 	def __len__(self):

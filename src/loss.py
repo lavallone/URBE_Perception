@@ -5,7 +5,8 @@ import math
 ####################################################### UTILS ####################################################################
 ##################################################################################################################################
 # https://github.com/aladdinpersson/Machine-Learning-Collection
-def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
+# it is only needed during the targets transformation function
+def iou_width_height(gt_box, anchors, strided_anchors=False, stride=[8, 16, 32]):
     """
     Parameters:
         gt_box (tensor): width and height of the ground truth box
@@ -18,6 +19,8 @@ def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
     anchors /= 640
     if strided_anchors:
         anchors = anchors.reshape(9, 2) * torch.tensor(stride).repeat(6, 1).T.reshape(9, 2)
+    else:
+        anchors = anchors.reshape(9, 2)
     anchors = anchors.to("cuda")
     intersection = torch.min(gt_box[..., 0], anchors[..., 0]) * torch.min(
         gt_box[..., 1], anchors[..., 1]
@@ -30,8 +33,8 @@ def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
     # intersection/union shape (9,)
     return intersection / union
 
-# I added the possibility of computing also DIoU and CIoU!
-def intersection_over_union(boxes_preds, boxes_labels, box_format="midpoint", GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
+# added the possibility of computing also GIoU, DIoU and CIoU!
+def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
     """
     This function calculates intersection over union (iou) given pred boxes
     and target boxes.
@@ -39,25 +42,27 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="midpoint", GI
     Parameters:
         boxes_preds (tensor): Predictions of Bounding Boxes (BATCH_SIZE, 4)
         boxes_labels (tensor): Correct labels of Bounding Boxes (BATCH_SIZE, 4)
-        box_format (str): midpoint/corners, if boxes (x,y,w,h) or (x1,y1,x2,y2)
-        GIoU (bool): if True it computed GIoU loss (https://giou.stanford.edu)
+        box_format (str): coco/corners, if boxes (x1,y1,w,h) or (x1,y1,x2,y2)
+        GIoU (bool): if True it computed GIoU loss (https://arxiv.org/pdf/1902.09630.pdf)
+        DIoU (bool): if True it computed DIoU loss (https://arxiv.org/abs/1911.08287v1)
+        CIoU (bool): if True it computed CIoU loss (https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47)
         eps (float): for numerical stability
 
     Returns:
         tensor: Intersection over union for all examples
     """
 
-    if box_format == "midpoint":
-        box1_x1 = boxes_preds[..., 0:1] - boxes_preds[..., 2:3] / 2
-        box1_y1 = boxes_preds[..., 1:2] - boxes_preds[..., 3:4] / 2
-        box1_x2 = boxes_preds[..., 0:1] + boxes_preds[..., 2:3] / 2
-        box1_y2 = boxes_preds[..., 1:2] + boxes_preds[..., 3:4] / 2
-        box2_x1 = boxes_labels[..., 0:1] - boxes_labels[..., 2:3] / 2
-        box2_y1 = boxes_labels[..., 1:2] - boxes_labels[..., 3:4] / 2
-        box2_x2 = boxes_labels[..., 0:1] + boxes_labels[..., 2:3] / 2
-        box2_y2 = boxes_labels[..., 1:2] + boxes_labels[..., 3:4] / 2
+    if box_format == "coco":
+        box1_x1 = boxes_preds[..., 0:1]
+        box1_y1 = boxes_preds[..., 1:2] 
+        box1_x2 = boxes_preds[..., 0:1] + boxes_preds[..., 2:3] 
+        box1_y2 = boxes_preds[..., 1:2] + boxes_preds[..., 3:4]
+        box2_x1 = boxes_labels[..., 0:1] 
+        box2_y1 = boxes_labels[..., 1:2] 
+        box2_x2 = boxes_labels[..., 0:1] + boxes_labels[..., 2:3]
+        box2_y2 = boxes_labels[..., 1:2] + boxes_labels[..., 3:4]
 
-    else:  # if not midpoints box coordinates are considered to be in coco format
+    else:
         box1_x1 = boxes_preds[..., 0:1]
         box1_y1 = boxes_preds[..., 1:2]
         box1_x2 = boxes_preds[..., 2:3]
@@ -68,36 +73,39 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="midpoint", GI
         box2_y2 = boxes_labels[..., 3:4]
 
     w1, h1, w2, h2 = box1_x2 - box1_x1, box1_y2 - box1_y1, box2_x2 - box2_x1, box2_y2 - box2_y1
+    
     # Intersection area
+    # clamp(0) is for the case when they do not intersect
     inter = (torch.min(box1_x2, box2_x2) - torch.max(box1_x1, box2_x1)).clamp(0) * \
             (torch.min(box1_y2, box2_y2) - torch.max(box1_y1, box2_y1)).clamp(0)
 
     # Union Area
-    union = w1 * h1 + w2 * h2 - inter + eps
+    union = (w1 * h1) + (w2 * h2) - inter + eps
 
     iou = inter / union
 
-    if GIoU or DIoU or CIoU:
+    # lasciamo perdere per il momento
+    if False: # GIoU or DIoU or CIoU:
         cw = torch.max(box1_x2, box2_x2) - torch.min(box1_x1, box2_x1)  # convex (smallest enclosing box) width
         ch = torch.max(box1_y2, box2_y2) - torch.min(box1_y1, box2_y1)
-        if CIoU or DIoU:  # Distance or Complete IoU https://arxiv.org/abs/1911.08287v1
+        if CIoU or DIoU:
             c2 = cw ** 2 + ch ** 2 + eps  # convex diagonal squared
             rho2 = ((box2_x1 + box2_x2 - box1_x1 - box1_x2) ** 2 +
                     (box2_y1 + box2_y2 - box1_y1 - box1_y2) ** 2) / 4  # center distance squared
             if DIoU:
                 return iou - rho2 / c2  # DIoU
-            elif CIoU:  # https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47
+            elif CIoU:
                 v = (4 / math.pi ** 2) * torch.pow(torch.atan(w2 / h2) - torch.atan(w1 / h1), 2)
                 with torch.no_grad():
                     alpha = v / (v - iou + (1 + eps))
                 return iou - (rho2 / c2 + v * alpha)  # CIoU
-        else:  # GIoU https://arxiv.org/pdf/1902.09630.pdf
+        else:
             c_area = cw * ch + eps  # convex area
             return iou - (c_area - union) / c_area  # GIoU
         c_area = cw * ch + eps  # convex height
         return iou - (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
-    else:
-        return iou  # IoU
+    else: # simple IoU
+        return iou 
 ##################################################################################################################################
 
 class YOLO_Loss:
@@ -117,10 +125,11 @@ class YOLO_Loss:
     BALANCE = [4.0, 1.0, 0.4]
     
     @staticmethod
+    # this function deal with one image at a time
     def transform_targets(input_tensor, bboxes, anchors, strides, ignore_iou_thresh, num_anchors_per_scale=3):
         targets = [torch.zeros((num_anchors_per_scale, input_tensor[i].shape[2], input_tensor[i].shape[3], 6))
                    for i in range(len(strides))]
-        
+    
         # bboxes is relative to a single batch --> (max_labels_batch, 5)
         classes = bboxes[:, 0].tolist()
         bboxes = bboxes[:, 1:]
@@ -132,25 +141,31 @@ class YOLO_Loss:
                 break
 
         for idx, box in enumerate(bboxes):
-            iou_anchors = iou_width_height(box[2:4], anchors)
-            anchor_indices = iou_anchors.argsort(descending=True, dim=0)
-            x, y, width, height, = box
-            has_anchor = [False] * 3
-            for anchor_idx in anchor_indices:
-                scale_idx = torch.div(anchor_idx, num_anchors_per_scale, rounding_mode="floor")
-                anchor_on_scale = anchor_idx % num_anchors_per_scale
+            iou_anchors = iou_width_height(box[2:4], anchors) # we calculate the iou for the particular box and all the anchors
+            anchor_indices = iou_anchors.argsort(descending=True, dim=0) # which anchors are the best?
+            x, y, width, height = box
+            has_anchor = [False] * 3 # we make sure that there is an anchor for each scale for each particular box
+            for anchor_idx in anchor_indices: # we iterate starting from the "best ones" first
+                scale_idx = torch.div(anchor_idx, num_anchors_per_scale, rounding_mode="floor") # in this way we know to which scale the anchor belongs to
+                anchor_on_scale = anchor_idx % num_anchors_per_scale # which anchor in the particular scale
+                
                 scale_y = input_tensor[int(scale_idx)].shape[2]
                 scale_x = input_tensor[int(scale_idx)].shape[3]
-                i, j = int(scale_y * y), int(scale_x * x)
+                i, j = int(scale_y * y), int(scale_x * x) # coordinates of the particular cell
                 anchor_taken = targets[scale_idx][anchor_on_scale, i, j, 4]
+                
+                # if the cell at a particular scale is not already taken (by another object) and we didn't pick it yet a cell at the particular scale
                 if not anchor_taken and not has_anchor[scale_idx]:
-                    targets[scale_idx][anchor_on_scale, i, j, 4] = 1
-                    x_cell, y_cell = scale_x * x - j, scale_y * y - i
+                    targets[scale_idx][anchor_on_scale, i, j, 4] = 1 # we say that is "taken"
+                    
+                    x_cell, y_cell = scale_x * x - j, scale_y * y - i # coordinates of x and y w.r.t. the cell
                     width_cell, height_cell = (width * scale_x, height * scale_y,)
-                    box_coordinates = torch.tensor([x_cell, y_cell, width_cell, height_cell])
+                    
+                    box_coordinates = torch.tensor([x_cell, y_cell, width_cell, height_cell]) # w.r.t. the cell
                     targets[scale_idx][anchor_on_scale, i, j, 0:4] = box_coordinates
                     targets[scale_idx][anchor_on_scale, i, j, 5] = int(classes[idx])
-                    has_anchor[scale_idx] = True
+                    has_anchor[scale_idx] = True # for this scale and for this particular bbox we have the anchor
+                # e come se servisse mettere il -1 agli anchor della stessa scala che non sono i migliori ma che comunque hanno un iou alto!
                 elif not anchor_taken and iou_anchors[anchor_idx] > ignore_iou_thresh:
                     targets[scale_idx][anchor_on_scale, i, j, 4] = -1  # ignore prediction
         return targets
@@ -172,7 +187,7 @@ class YOLO_Loss:
         self.na = self.anchors.reshape(9,2).shape[0] # number of anchors --> 9
         self.num_anchors_per_scale = self.na // 3 # number of anchors for each scale --> 3
         self.S = YOLO_Loss.STRIDE
-        self.ignore_iou_thresh = hparams["ignore_iou_thresh"]
+        self.ignore_iou_thresh = 0.5
         
         # https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml)
         # https://github.com/ultralytics/yolov5/blob/master/utils/loss.py#L170)
@@ -215,7 +230,7 @@ class YOLO_Loss:
         # ======================== #
         #   FOR BOX COORDINATES    #
         # ======================== #
-        iou = intersection_over_union(pbox, tbox, GIoU=True).squeeze()  # iou(prediction, target)
+        iou = intersection_over_union(pbox, tbox, box_format="coco", GIoU=True).squeeze()  # iou(prediction, target)
         lbox = (1.0 - iou).mean()  # iou loss
 
         # ======================= #

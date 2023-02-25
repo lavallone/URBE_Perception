@@ -5,7 +5,7 @@ from torchvision.transforms import Resize
 from torchvision.transforms import InterpolationMode
 import wandb
 import pytorch_lightning as pl
-from .loss import YOLO_Loss
+from .loss import YOLO_Loss, intersection_over_union
 import random
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from torchvision.ops import nms
@@ -373,8 +373,6 @@ class URBE_Perception(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         imgs = batch['img']
-        print("SSSSSSSSS")
-        print(imgs.shape[0])
         out = self(imgs)
         loss = self.loss(out, batch["labels"])
         # LOSS
@@ -382,7 +380,7 @@ class URBE_Perception(pl.LightningModule):
         return {"loss": loss["loss"]}
 
     # =======================================================================================#
-    def make_grids(self, anchors, naxs, stride, nx=20, ny=20, i=0):
+    def make_grids(self, anchors, naxs, nx=20, ny=20, i=0):
 
         x_grid = torch.arange(nx)
         x_grid = x_grid.repeat(ny).reshape(ny, nx)
@@ -392,29 +390,33 @@ class URBE_Perception(pl.LightningModule):
 
         xy_grid = torch.stack([x_grid, y_grid], dim=-1)
         xy_grid = xy_grid.expand(1, naxs, ny, nx, 2)
-        anchor_grid = (anchors[i]*stride).reshape((1, naxs, 1, 1, 2)).expand(1, naxs, ny, nx, 2)
+        anchor_grid = (anchors[i]).reshape((1, naxs, 1, 1, 2)).expand(1, naxs, ny, nx, 2)
 
         return xy_grid.to(self.device), anchor_grid.to(self.device)
 
-    def cells_to_bboxes(self, predictions, anchors, strides, device, is_pred=False, to_list=True):
-        num_out_layers = len(predictions)
+    def cells_to_bboxes(self, predictions, anchors, strides, device, is_pred=False):
+        num_out_layers = len(predictions) # num of scales 
         grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialize
         anchor_grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialize
             
         all_bboxes = []
         for i in range(num_out_layers):
-            bs, naxs, ny, nx, _ = predictions[i].shape
-            stride = strides[i]
-            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, ny=ny, nx=nx, stride=stride, i=i)
+            bs, naxs, ny, nx, _ = predictions[i].shape # (bs, 3, 80/40/20, 80/40/20, _)
+            stride = strides[i] # 8/16/32
+            # grid rappresenta la griglia (80x80, 40x40, ...) con gli indici
+            # invece anchor_grid ha lo stesso numero di celle, ma con i valori degli anchors
+            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, ny=ny, nx=nx, i=i) # entrambi torch.Size([1, 3, 80, 80, 2]) - 1 è per avere una dimensione inpiù epr lavoarre con i batches
             if is_pred: # if they are the predicitons made by the model
                 # formula here: https://github.com/ultralytics/yolov5/issues/471
                 layer_prediction = predictions[i].sigmoid()
                 obj = layer_prediction[..., 4:5]
                 xy = (2 * (layer_prediction[..., 0:2]) + grid[i] - 0.5) * stride
                 wh = ((2*layer_prediction[..., 2:4])**2) * anchor_grid[i]
-                best_class = torch.argmax(layer_prediction[..., 5:], dim=-1).unsqueeze(-1)
+                best_class = torch.argmax(layer_prediction[..., 5:], dim=-1).unsqueeze(-1) # quindi da 8 diventa 6!
 
             else: # when we want to re-convert the ground_truth labels to images bboxes
+                if i != num_out_layers-1:
+                    continue
                 predictions[i] = predictions[i].to(device, non_blocking=True)
                 obj = predictions[i][..., 4:5]
                 xy = (predictions[i][..., 0:2] + grid[i]) * stride
@@ -422,101 +424,119 @@ class URBE_Perception(pl.LightningModule):
                 best_class = predictions[i][..., 5:6]
 
             scale_bboxes = torch.cat((best_class, obj, xy, wh), dim=-1).reshape(bs, -1, 6)
-
             all_bboxes.append(scale_bboxes)
+        return torch.cat(all_bboxes, dim=1)
 
-        return torch.cat(all_bboxes, dim=1).tolist() if to_list else torch.cat(all_bboxes, dim=1)
-
-    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=300, tolist=True):
+    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False): # it can be run an analysis about which is the best choice for max_detection for image
         bboxes_after_nms = []
-        for boxes in batch_bboxes:
-            #print("Total number of predicted bboxes:")
-            #print(boxes.shape)
-            boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we predict the bbox!
-            #print("After threshold filtering:")
-            #print(boxes.shape)
+        for boxes in batch_bboxes: # we iterate over the batches
+            # 'boxes' is the set of cells for one batch --> (25200, 6)
+            # FIRST FILTER on the probability of objectness
+            boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we continue...
+            # from x1y1wh to x1y1x2y2 --> it is perfect for wandb visualization!
+            boxes[..., 2:3] = boxes[..., 2:3]
+            boxes[..., 3:4] = boxes[..., 3:4]
+            boxes[..., 4:5] = boxes[..., 2:3] + boxes[..., 4:5]
+            boxes[..., 5:6] = boxes[..., 3:4] + boxes[..., 5:6]
             
-            # from xywh to x1y1x2y2 --> it is perfect fot wandb visualization!
-            boxes[..., 2:3] = boxes[..., 2:3] - (boxes[..., 4:5] / 2)
-            boxes[..., 3:4] = boxes[..., 3:4] - (boxes[..., 5:] / 2)
-            boxes[..., 5:6] = boxes[..., 5:6] + boxes[..., 3:4]
-            boxes[..., 4:5] = boxes[..., 4:5] + boxes[..., 2:3]
+            if is_pred: # I perform nms
+                boxes = sorted(boxes, key=lambda x: x[1], reverse=True)
+                bboxes_after_nms_batch = []
+                while boxes:
+                    print("nms execution")
+                    chosen_box = boxes.pop(0)
+                    
+                    l = []
+                    for box in boxes:
+                        print("box")
+                        iou = intersection_over_union(chosen_box[2:], box[2:], box_format="corners")
+                        print(iou)
+                        if box[0]!=chosen_box[0] or iou < iou_threshold:
+                            l.append(box)  
+                    boxes = l     
+                    # boxes = [box for box in boxes if (box[0]!=chosen_box[0]) # if they are not of the same class we don't compare them
+                    #                                   or (intersection_over_union(chosen_box[2:], box[2:], box_format="corners")
+                    #                                        < iou_threshold )]
+                    bboxes_after_nms_batch.append(chosen_box)
+                if bboxes_after_nms_batch==[]:
+                    print("no predictions!!!!")
+                    bboxes_after_nms.append(bboxes_after_nms_batch)
+                    continue
+                bboxes_after_nms_batch = torch.stack(bboxes_after_nms_batch)
 
-            indices = nms(boxes=boxes[..., 2:] + boxes[..., 0:1], scores=boxes[..., 1], iou_threshold=iou_threshold)
-            boxes = boxes[indices]
-            #print("After nms filtering:")
-            #print(boxes.shape)
-            # boxes are now sorted by objectness score thanks to torch metrics's nms
+                if bboxes_after_nms_batch.shape[0] > max_detections: # we filter the maximum number of detections for a single image
+                    bboxes_after_nms_batch = bboxes_after_nms_batch[:max_detections, :]
 
-            if boxes.shape[0] > max_detections: # we filter the maximum number of detections for a single batch
-                boxes = boxes[:max_detections, :]
-
-            bboxes_after_nms.append(boxes.tolist() if tolist else boxes)
-        return bboxes_after_nms if tolist else torch.cat(bboxes_after_nms, dim=0)
-
+                bboxes_after_nms.append(bboxes_after_nms_batch)
+            # we're dealing with targets
+            else:
+                bboxes_after_nms.append(boxes)
+        return bboxes_after_nms # return a list of tensors --> len(bboxes_after_nms) == batch_size
+    
     # images logging during training phase but used for validation images
-    def get_images_for_log(self, imgs, bboxes):
-        # we prepare eaach image
+    def get_images_for_log(self, imgs, bboxes, labels, scores):
+        # we prepare each image
         transform = T.ToPILImage()
         images_list = [transform(img) for img in imgs]
         
         example_images = []
         for i, bbox in enumerate(bboxes): # for each image of the batch
             ris = { "predictions" : {"box_data" : [], "class_labels" : {0 : "vehicle" , 1 : "person", 2 : "motorbike"}} }
-            for box in bbox: # for each bbox of the particular image
-                position = {"minX": box[2], "maxX": box[4] , "minY": box[3], "maxY": box[5]}
-                class_id = box[0]
-                score  = box[1]
+            for box, label in zip(bbox, labels[i]): # for each bbox of the particular image
+                print(box)
+                print(label)
+                position = {"minX": box[0], "maxX": box[2] , "minY": box[1], "maxY": box[3]}
+                class_id = int(label)
+                #score  = float(scores[i])
                 box_caption = ris["predictions"]["class_labels"][class_id]
-                x = {"position" : position, "domain" : "pixel", "class_id" : class_id, "box_caption" : box_caption, "scores" : {"score" : score}}
+                x = {"position" : position, "domain" : "pixel", "class_id" : class_id, "box_caption" : box_caption, "scores" : {"score" : 1}}
                 ris["predictions"]["box_data"].append(x)
             example_images.append(wandb.Image(wandb.Image(images_list[i], boxes=ris)))
         return example_images
     # =======================================================================================#
     
     def predict(self, predictions, targets):
-        print(targets.shape)
-        targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.hparams.ignore_iou_thresh) for bboxes in targets]
+        targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, 0.5) for bboxes in targets]
         # I want targets to be the same shape as predictions --> (bs, 3 , 80/40/20, 80/40/20, 6)
         t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
         t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device,non_blocking=True)
         t3 = torch.stack([target[2] for target in targets], dim=0).to(self.device,non_blocking=True)
-        targets = [t1, t2, t3]
-        # Custom "Accuracy" for classes and objectness
+        targets = [t1, t2, t3] # all the batches are grouped according to the scale
+        
+        ## Custom "Accuracy" for classes and objectness ##
         tot_class_preds, correct_class = 0, 0
         tot_obj, correct_obj = 0, 0
-        for i in range(3): # for each layer/scale
-            targets[i] = targets[i].to(self.device)
-            obj = targets[i][..., 4] == 1 # the total number of bbox to detect
-            # among the grid cells that contains an object, see if the most likely predicted class is the target one
-            correct_class += torch.sum(
-                torch.argmax(predictions[i][..., 5:][obj], dim=-1) == targets[i][..., 5][obj]
-            )
-            tot_class_preds += torch.sum(obj)
-            # among the grid cells that contains an object, see if the cell is predicted as a cell which detects an object
-            obj_preds = torch.sigmoid(predictions[i][..., 4]) > self.hparams.conf_threshold # is the model confident that is detecting an object?
-            correct_obj += torch.sum(obj_preds[obj] == targets[i][..., 4][obj])
-            tot_obj += torch.sum(obj)
+        # for i in range(3): # for each layer/scale
+        #     targets[i] = targets[i].to(self.device)
+        #     obj = targets[i][..., 4] == 1 # the total number of bbox to detect
+        #     # among the grid cells that contains an object, see if the most likely predicted class is the target one
+        #     correct_class += torch.sum(
+        #         torch.argmax(predictions[i][..., 5:][obj], dim=-1) == targets[i][..., 5][obj]
+        #     )
+        #     tot_class_preds += torch.sum(obj)
+        #     # among the grid cells that contains an object, see if the cell is predicted as a cell which detects an object
+        #     obj_preds = torch.sigmoid(predictions[i][..., 4]) > self.hparams.conf_threshold # is the model confident that is detecting an object?
+        #     correct_obj += torch.sum(obj_preds[obj] == targets[i][..., 4][obj])
+        #     tot_obj += torch.sum(obj)
         
-        # mAP_50
-        print(predictions[0].shape)
-        print(predictions[1].shape)
-        print(predictions[2].shape)
-        print("·····················.")
-        pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True, to_list=False)
-        true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False, to_list=False)
-
-        pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
-        true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, tolist=False, max_detections=300)
-        print(pred_boxes)
-        print(pred_boxes.shape)
-        print("----------")
-        print(true_boxes)
-        print(true_boxes.shape)
-        pred_dict = [dict(boxes=pred_boxes[..., 2:], scores=pred_boxes[..., 1], labels=pred_boxes[..., 0],)]
-        true_dict = [dict(boxes=true_boxes[..., 2:], labels=true_boxes[..., 0],)]
+        ## mAP_50 ##
+        pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True) # (bs, 25200, 6)
+        true_boxes = (self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False)) # I only take one layer! --> (bs, 20*20*3, 6)
+        # both the predictions and the targets are (bs, 25200, 6) --> where 25200 is the number of total cells for each image we look for an object
+        # predictions are for all the three layers
         
-        return {"mAP" : (pred_dict, true_dict) , "accuracy" : (tot_class_preds, correct_class, tot_obj, correct_obj)}
+        pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=300, is_pred=True)
+        true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=300, is_pred=False)
+        
+        pred_dict_list = []
+        for i in range(len(pred_boxes)):
+            if pred_boxes[i] == []: # if the model hasn't predict any bboxes
+                pred_dict_list.append( dict(boxes=torch.tensor([]).to("cuda"), scores=torch.tensor([]).to("cuda"), labels=torch.tensor([]).to("cuda"),) )
+            else:
+                pred_dict_list.append( dict(boxes=pred_boxes[i][..., 2:], scores=pred_boxes[i][..., 1], labels=pred_boxes[i][..., 0],) )
+        true_dict_list = [ dict(boxes=true_boxes[i][..., 2:], labels=true_boxes[i][..., 0],) for i in range(len(true_boxes)) ]
+        
+        return {"mAP" : (pred_dict_list, true_dict_list) , "accuracy" : (tot_class_preds, correct_class, tot_obj, correct_obj)}
 
     def validation_step(self, batch, batch_idx):
         imgs = batch['img']
@@ -528,14 +548,18 @@ class URBE_Perception(pl.LightningModule):
     	
         # METRICS
         pred = self.predict(out, batch['labels'])
-        self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
-        self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        #self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        #self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.mAP.update(pred["mAP"][0], pred["mAP"][1])
         self.log("mAP_50", self.mAP.compute()["map_50"], on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size) # in caso metti self.mAP["map_50"]
-    	
+        
      	# IMAGES
         if self.hparams.log_image_each_epoch != 0:
-            images = self.get_images_for_log(imgs[0:self.hparams.log_images], (pred["mAP"][0]["boxes"])[0:self.hparams.log_images])
+            bboxes = [e["boxes"] for e in (pred["mAP"][1][0:self.hparams.log_images]) ]
+            labels = [e["labels"] for e in (pred["mAP"][1][0:self.hparams.log_images]) ]
+            #scores = [e["scores"] for e in (pred["mAP"][1][0:self.hparams.log_images]) ]
+            scores=None
+            images = self.get_images_for_log(imgs[0:self.hparams.log_images], bboxes, labels, scores)
             return {"images": images}
         else:
             return None
