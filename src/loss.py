@@ -127,7 +127,7 @@ class YOLO_Loss:
     
     @staticmethod
     # this function deal with one image at a time
-    def transform_targets(input_tensor, bboxes, anchors, strides, ignore_iou_thresh, num_anchors_per_scale=3):
+    def transform_targets(input_tensor, bboxes, anchors, strides, num_anchors_per_scale=3):
         targets = [torch.zeros((num_anchors_per_scale, input_tensor[i].shape[2], input_tensor[i].shape[3], 6))
                    for i in range(len(strides))]
     
@@ -166,17 +166,12 @@ class YOLO_Loss:
                     targets[scale_idx][anchor_on_scale, i, j, 0:4] = box_coordinates
                     targets[scale_idx][anchor_on_scale, i, j, 5] = int(classes[idx])
                     has_anchor[scale_idx] = True # for this scale and for this particular bbox we have the anchor
-                # e come se servisse mettere il -1 agli anchor della stessa scala che non sono i migliori ma che comunque hanno un iou alto!
-                elif not anchor_taken and iou_anchors[anchor_idx] > ignore_iou_thresh:
-                    targets[scale_idx][anchor_on_scale, i, j, 4] = -1  # ignore prediction
         return targets
     
     def __init__(self, hparams):
 
-        #self.mse = nn.MSELoss()
-        self.BCE_cls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
+        self.BCE_cls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0)) # pos_weigt indicates how much the positive samples are weighted during the loss computation
         self.BCE_obj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
-        self.BCE_noobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
         self.sigmoid = nn.Sigmoid()
         
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -189,22 +184,19 @@ class YOLO_Loss:
         self.na = self.anchors.reshape(9,2).shape[0] # number of anchors --> 9
         self.num_anchors_per_scale = self.na // 3 # number of anchors for each scale --> 3
         self.S = YOLO_Loss.STRIDE
-        self.ignore_iou_thresh = 0.5
         
-        # https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml)
-        # https://github.com/ultralytics/yolov5/blob/master/utils/loss.py#L170)
-        # https://github.com/ultralytics/yolov5/blob/master/train.py#L232)
+        # https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml
+        # https://github.com/ultralytics/yolov5/blob/master/utils/loss.py#L170
         self.lambda_class = hparams["weight_class"] * (self.nc / 80 * 3 / self.nl) # scale to layers
         self.lambda_obj = hparams["weight_obj"] * ((hparams["img_size"] / 640) ** 2 * 3 / self.nl) # scale to classes and layers
         self.lambda_box = hparams["weight_box"] * (3 / self.nl) # scale to image size and layers
 
         self.balance = YOLO_Loss.BALANCE
-        self.add_no_obj_loss = hparams["add_no_obj_loss"]
 
     def __call__(self, preds, targets):
 
         # we transform the targets in order to be able to compare them with the predictions output by the model
-        targets = [YOLO_Loss.transform_targets(preds, bboxes, self.anchors, self.S, self.ignore_iou_thresh, self.num_anchors_per_scale) for bboxes in targets]
+        targets = [YOLO_Loss.transform_targets(preds, bboxes, self.anchors, self.S, self.num_anchors_per_scale) for bboxes in targets]
 
         t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device, non_blocking=True)
         t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device, non_blocking=True)
@@ -226,8 +218,6 @@ class YOLO_Loss:
         anchors = anchors.to("cuda")
         
         obj = targets[..., 4] == 1
-        if self.add_no_obj_loss:
-            noobj = targets[..., 4] == 0
         
         pxy = (preds[..., 0:2].sigmoid() * 2) - 0.5
         pwh = ((preds[..., 2:4].sigmoid() * 2) ** 2) * anchors
@@ -235,7 +225,7 @@ class YOLO_Loss:
         tbox = targets[..., 0:4][obj]
         
         # iou computation
-        iou = intersection_over_union(pbox, tbox, box_format="coco", GIoU=True).squeeze()
+        iou = intersection_over_union(pbox, tbox, box_format="coco", GIoU=True).squeeze() # official yolov5 repo uses CIoU
 
         # ======================== #
         #   FOR BOX COORDINATES    #
@@ -250,17 +240,11 @@ class YOLO_Loss:
         targets[..., 4][obj] *= iou # instead of simply having objectness=1 for the targets
         lobj = self.BCE_obj(preds[..., 4], targets[..., 4]) * balance
         
-        # ======================= #
-        #   FOR NO_OBJECTNESS SCORE  #
-        # ======================= #
-        if self.add_no_obj_loss:
-            lnoobj = self.BCE_noobj(preds[..., 4], targets[..., 4]) * balance
-        
         # ================== #
         #   FOR CLASS LOSS   #
         # ================== #
-        tcls = torch.zeros_like(preds[..., 5:][obj], device=self.device)
-        tcls[torch.arange(tcls.size(0)), targets[..., 5][obj].long()] = 1.0  # for torch > 1.11.0
+        tcls = torch.zeros_like(preds[..., 5:][obj], device=self.device) # in order to make it comparable with the predictions, we augment the class field from 1 to 3 --> [0, 0, 0]
+        tcls[torch.arange(tcls.size(0)), targets[..., 5][obj].long()] = 1.0  # and we set to one the class to which the object belongs (for torch > 1.11.0)
         lcls = self.BCE_cls(preds[..., 5:][obj], tcls)
 
         return (self.lambda_box * lbox + self.lambda_obj * lobj + self.lambda_class * lcls) * bs # like in YOLOv5 official code

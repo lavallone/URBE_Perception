@@ -428,11 +428,17 @@ class URBE_Perception(pl.LightningModule):
         return torch.cat(all_bboxes, dim=1)
 
     def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False): # it can be run an analysis about which is the best choice for max_detection for image
+        # for statistics purposes
+        conf_thresh_ratio = 0
+        nms_ratio = 0
+        num_predictions = 0
+        
         bboxes_after_nms = []
         for boxes in batch_bboxes: # we iterate over the batches
             # 'boxes' is the set of cells for one batch --> (25200, 6)
             # FIRST FILTER on the probability of objectness
             boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we continue...
+            conf_thresh_ratio += len(boxes) / 25200
             # from x1y1wh to x1y1x2y2 --> it is perfect for wandb visualization!
             boxes[..., 2:3] = boxes[..., 2:3]
             boxes[..., 3:4] = boxes[..., 3:4]
@@ -444,16 +450,23 @@ class URBE_Perception(pl.LightningModule):
                 indices = batched_nms(boxes[..., 2:], boxes[..., 1], boxes[..., 0].int(), iou_threshold)
                 
                 if indices.numel() == 0:
-                    print("no predictions!!!!")
-                    boxes = torch.empty([])
+                    print("***NO PREDICTIONS***")
+                    boxes = torch.tensor([])
                 else:
+                    before_nms = len(boxes)
                     boxes = boxes[indices]
+                    nms_ratio += len(boxes) / before_nms
+                    num_predictions += len(boxes)
                     
-                if boxes.shape[0] > max_detections: # we set a maximum number of predictions
-                    boxes = boxes[:max_detections, :]
+                    #if boxes.shape[0] > max_detections: # we set a maximum number of predictions
+                    #    boxes = boxes[:max_detections, :]
             
             bboxes_after_nms.append(boxes)
-        return bboxes_after_nms # return a list of tensors --> len(bboxes_after_nms) == batch_size
+        # if we're dealing with predictions we also want to save some statistics    
+        if is_pred:
+            return conf_thresh_ratio/len(batch_bboxes), nms_ratio/len(batch_bboxes), num_predictions/len(batch_bboxes), bboxes_after_nms # return a list of tensors --> len(bboxes_after_nms) == batch_size
+        else:
+            return bboxes_after_nms
     
     # images logging during training phase but used for validation images
     def get_images_for_log(self, imgs, bboxes, labels, scores):
@@ -476,7 +489,7 @@ class URBE_Perception(pl.LightningModule):
     # =======================================================================================#
     
     def predict(self, predictions, targets):
-        targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, 0.5) for bboxes in targets]
+        targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE) for bboxes in targets]
         # I want targets to be the same shape as predictions --> (bs, 3 , 80/40/20, 80/40/20, 6)
         t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
         t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device,non_blocking=True)
@@ -507,18 +520,21 @@ class URBE_Perception(pl.LightningModule):
         pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True) # (bs, 25200, 6) --> we use all the three layers
         true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False) # (bs, 20*20*3, 6)
         # after 'cell_to_boxes' the bboxes are set for 640x640 image size (indeed not normalized)
-        pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, is_pred=True)
+        conf_thresh_ratio, nms_ratio, num_predictions, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, is_pred=True)
         true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, is_pred=False)
 
         pred_dict_list = []
-        for i in range(len(pred_boxes)):
-            if pred_boxes[i].numel() == 0: # if the model hasn't predict any bboxes
+        for b in range(len(pred_boxes)):
+            if pred_boxes[b].numel() == 0: # if the model hasn't predict any bboxes
                 pred_dict_list.append( dict(boxes=torch.tensor([]).to("cuda"), scores=torch.tensor([]).to("cuda"), labels=torch.tensor([]).to("cuda"),) )
             else:
-                pred_dict_list.append( dict(boxes=pred_boxes[i][..., 2:], scores=pred_boxes[i][..., 1], labels=pred_boxes[i][..., 0],) )
+                pred_dict_list.append( dict(boxes=pred_boxes[b][..., 2:], scores=pred_boxes[b][..., 1], labels=pred_boxes[b][..., 0],) )
         true_dict_list = [ dict(boxes=true_boxes[i][..., 2:], labels=true_boxes[i][..., 0],) for i in range(len(true_boxes)) ]
         
-        return {"mAP" : (pred_dict_list, true_dict_list) , "accuracy" : (tot_class, correct_class, tot_obj, correct_obj)}
+        print(list(zip([e["boxes"].shape[0] for e in pred_dict_list], [e["boxes"].shape[0] for e in true_dict_list])))
+        print(list(zip([e["boxes"] for e in pred_dict_list], [e["boxes"] for e in true_dict_list])))
+        
+        return conf_thresh_ratio, nms_ratio, num_predictions, {"mAP" : (pred_dict_list, true_dict_list) , "accuracy" : (tot_class, correct_class, tot_obj, correct_obj)}
 
     def validation_step(self, batch, batch_idx):
         imgs = batch['img']
@@ -528,8 +544,12 @@ class URBE_Perception(pl.LightningModule):
         # LOSS
         self.log("val_loss", val_loss["loss"], on_step=False, on_epoch=True, batch_size=imgs.shape[0])
     	
+        conf_thresh_ratio, nms_ratio, num_predictions, pred = self.predict(out, batch['labels'])
+        # STATISTICS - (conf_thresh_ratio * nms_ratio * 25200 ~ num_predictions)
+        self.log("conf_thresh_ratio", conf_thresh_ratio, on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        self.log("nms_ratio", nms_ratio, on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
+        self.log("num_predictions", num_predictions, on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         # METRICS
-        pred = self.predict(out, batch['labels'])
         self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.mAP.update(pred["mAP"][0], pred["mAP"][1])
