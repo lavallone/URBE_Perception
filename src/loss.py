@@ -85,8 +85,7 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=F
 
     iou = inter / union
 
-    # lasciamo perdere per il momento
-    if False: # GIoU or DIoU or CIoU:
+    if GIoU or DIoU or CIoU:
         cw = torch.max(box1_x2, box2_x2) - torch.min(box1_x1, box2_x1)  # convex (smallest enclosing box) width
         ch = torch.max(box1_y2, box2_y2) - torch.min(box1_y1, box2_y1)
         if CIoU or DIoU:
@@ -105,6 +104,7 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=F
             return iou - (c_area - union) / c_area  # GIoU
         c_area = cw * ch + eps  # convex height
         return iou - (c_area - union) / c_area  # GIoU https://arxiv.org/pdf/1902.09630.pdf
+    
     else: # simple IoU
         return iou 
 ##################################################################################################################################

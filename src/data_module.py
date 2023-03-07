@@ -35,7 +35,7 @@ class URBE_Dataset(Dataset):
 		# this function read the fresh downloaded dataset and make it ready for the training
 		print(f"Loading {self.data_type} dataset...")
 		images_folder = [os.path.join(self.dataset_dir,e) for e in os.listdir(self.dataset_dir)]
-		max_number = round(self.hparams.max_number_images/8) if (self.data_type == "val" or self.data_type == "test") else self.hparams.max_number_images
+		max_number = round(self.hparams.max_number_images/10) if (self.data_type == "val" or self.data_type == "test") else self.hparams.max_number_images
 		for file_name in tqdm(images_folder[:max_number]):
 			image_id = (file_name.split("_")[-1])[:-4]
 			img = self.transform(Image.open(file_name).convert('RGB'))

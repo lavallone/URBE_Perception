@@ -15,6 +15,7 @@ def train_model(data, model, experiment_name, patience, metric_to_monitor, mode,
         save_top_k=1, monitor=metric_to_monitor, mode=mode, dirpath="models",
         filename=experiment_name +
         "-{epoch:02d}-{mAP_50:.4f}", verbose=True)
+    # strategies in order to reduce the inference time of the trained models (pruning, quantization, etc.)
     if model.hparams.reduce_inference == True:
         amount = 0.1 if model.hparams.first_out == 48 else 0.05 # if the model is medium or nano we change this value
         pruning = ModelPruning("l1_unstructured", amount=amount, use_lottery_ticket_hypothesis=True) # the pruning is computed each epoch!
@@ -22,12 +23,13 @@ def train_model(data, model, experiment_name, patience, metric_to_monitor, mode,
         callbacks = [early_stop_callback, checkpoint_callback, pruning, quantization]
     else:
         callbacks = [early_stop_callback, checkpoint_callback]
+    
     # the trainer collect all the useful informations so far for the training
     n_gpus = 1 if torch.cuda.is_available() else 0
     if model.hparams.resume_from_checkpoint is not None:
         trainer = pl.Trainer(
             logger=logger, max_epochs=epochs, log_every_n_steps=1, gpus=n_gpus,
-            callbacks=callbacks, precision = model.hparams.precision,
+            callbacks=callbacks, precision = model.hparams.precision, # notice that we can decide the training float precision (32 by default)
             num_sanity_val_steps=0, resume_from_checkpoint=model.hparams.resume_from_checkpoint
             )
     else:

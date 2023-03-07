@@ -5,12 +5,12 @@ class Hparams:
     # dataloader params
     dataset_dir: str = "dataset/URBE_dataset_10000/images"
     annotations_file_path: str = "dataset/URBE_dataset_10000/labels/COCO/annotations.json"
-    max_number_images: int = 100 #3500
+    max_number_images: int = 2000 #3500
     num_classes: int = 3 # number of classes in the dataset
     augmentation: bool = False # apply augmentation strategy to input images and bounding boxes
     img_size: int = 640 # forse lascerei sempre 640! # suggested size of image for YOLOv5 or 416--> by reducing the image size to a multiple of 32, you can get a higher frame rate. Here comes the trade-off between Speed and Accuracy. You can reduce the image size until you receive satisfactory accuracy for your use-case.
     img_channels: int = 3 # RGB channels
-    batch_size: int = 8#16 # size of the batches (20 sulla mia macchina)
+    batch_size: int = 16 # size of the batches (16 sulla mia macchina)
     n_cpu: int = 8 # number of cpu threads to use for the dataloaders
     pin_memory: bool = False # parameter to pin memory in dataloader
     
@@ -26,7 +26,7 @@ class Hparams:
     # TRAIN params
     resume_from_checkpoint: str = None # checkpoint model path from which we want to RESUME the training
     load_pretrained: bool = True # if we want to load pretrained weights (only for the BACKBONE and the NECK)
-    lr: float = 5e-4 # learning rate: 2e-4 or 5e-4
+    lr: float = 2e-4 # learning rate: 2e-4 or 5e-4
     min_lr: float = 1e-8 # min lr for ReduceLROnPlateau
     adam_eps: float = 1e-6 # term added to the denominator to improve numerical stability
     wd: float = 5e-4 # weight decay as regulation strategy: 5e-4 or 1e-6
@@ -37,7 +37,7 @@ class Hparams:
     
     # LOGGING params
     log_images: int = 4 # how many images to log each time
-    log_image_each_epoch: int = 4 # epochs interval we wait to log images
+    log_image_each_epoch: int = 0 # epochs interval we wait to log images
     
     # INFERENCE params
     reduce_inference: bool = False # if we want to prune/quantize the model
