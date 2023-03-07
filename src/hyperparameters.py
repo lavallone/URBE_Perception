@@ -3,8 +3,8 @@ from dataclasses import dataclass
 @dataclass
 class Hparams:
     # dataloader params
-    dataset_dir: str = "dataset/URBE_dataset_light/images"
-    annotations_file_path: str = "dataset/URBE_dataset_light/labels/COCO/annotations.json"
+    dataset_dir: str = "dataset/URBE_dataset_10000/images"
+    annotations_file_path: str = "dataset/URBE_dataset_10000/labels/COCO/annotations.json"
     max_number_images: int = 100 #3500
     num_classes: int = 3 # number of classes in the dataset
     augmentation: bool = False # apply augmentation strategy to input images and bounding boxes
