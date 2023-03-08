@@ -85,6 +85,8 @@ class URBE_Dataset(Dataset):
 				# and restore the original order of bboxes
 				aug_labels = torch.cat((torch.tensor([[e] for e in augmentations["class_labels"]]), torch.tensor(augmentations["bboxes"])), dim=-1)
 			data_tmp["labels"] = aug_labels.tolist()
+			
+			del labels, bboxes, categories, image, augmentations, aug_img, aug_labels
 			return data_tmp
 		else:
 			return self.data[idx]

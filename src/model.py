@@ -565,8 +565,9 @@ class URBE_Perception(pl.LightningModule):
     
     # we keep it only for image logging purposes
     def validation_epoch_end(self, outputs):
-        map_50 = self.mAP.compute()["map_50"]
-        self.log_dict({"map_50": map_50})
+        if self.hparams.log_map_each_epoch!=0 and self.global_step%self.hparams.log_map_each_epoch==0:
+            map_50 = self.mAP.compute()["map_50"]
+            self.log_dict({"map_50": map_50})
         
         if self.hparams.log_image_each_epoch!=0 and self.global_step%self.hparams.log_image_each_epoch==0:
             # we randomly select one batch index
