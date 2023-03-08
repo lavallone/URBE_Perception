@@ -10,6 +10,10 @@ import albumentations as A
 import numpy as np
 
 class URBE_Dataset(Dataset):
+    # static objs
+	c2id = {'vehicle': 0, 'person': 1, 'motorbike': 2}
+	id2c = {0: 'vehicle', 1: 'person', 2: 'motorbike'}
+    
 	def __init__(self, dataset_dir: str, data_type: str, annotations_file_path, hparams):
 		self.data = list()
 		self.data_type = data_type
@@ -24,11 +28,13 @@ class URBE_Dataset(Dataset):
 			# if I have to add a normalization factor I'll see later
 		])
 		if self.hparams.augmentation and self.data_type == "train": # a slightly image augmentation
-				self.augmentation = A.Compose([A.RandomCrop(width=self.hparams.img_size*0.8, height=self.hparams.img_size*0.8, p=0.2),
+				self.augmentation = A.Compose([A.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.0, p=0.4),
         									   A.VerticalFlip(p=0.5),
 											   A.HorizontalFlip(p=0.5),
 											   A.RandomBrightnessContrast(p=0.2),
-											  ], bbox_params=A.BboxParams(format='yolo', min_visibility=0.4, label_fields=[],))	
+											   A.Blur(p=0.05),
+											   A.ChannelShuffle(p=0.05),
+											  ], bbox_params=A.BboxParams(format='yolo', min_visibility=0.4, label_fields=['class_labels']))
 		self.make_data()
 	
 	def make_data(self):
@@ -43,12 +49,17 @@ class URBE_Dataset(Dataset):
 			ann_list = list(filter(lambda x: x["image_id"] == image_id, self.annotations["annotations"]))
 			labels = []
 			for ann in ann_list:
-				# we normalize the bounding boxes...
-				x1 = ann["bbox"][0] / 1280 # x1
-				y1 = ann["bbox"][1] / 720 # x2
+				# we normalize the bounding boxes using the (xc, yc, w, h) format...
+				x1 = ann["bbox"][0] / 1280
+				y1 = ann["bbox"][1] / 720
 				w = ann["bbox"][2] / 1280
 				h = ann["bbox"][3] / 720
-				labels.append( [ann["category_id"], x1, y1, w, h] ) # bboxes need to be normalized
+				xc = x1 + (w/2)
+				yc = y1 + (h/2)
+				# we skip these type of annotations in order to avoid future errors with albumentations (due to their bug)
+				if x1+w>1 or y1+h>1:
+					continue
+				labels.append( [ann["category_id"], xc, yc, w, h] ) # bboxes need to be normalized
 			self.data.append({"id" : image_id, "img" : img, "time" : time, "file_name" : file_name, "labels" : labels})
 	
 	def __len__(self):
@@ -59,24 +70,26 @@ class URBE_Dataset(Dataset):
   		# is performed only on the training set
 		if self.hparams.augmentation and self.data_type == "train": # a slightly image augmentation because the dataset is already heterogeneous!
 			data_tmp = self.data[idx]
-			data_tmp["img"] = self.augmentation(data_tmp["img"])
-			# albumentations requires bboxes to be (x,y,w,h,class_idx) --> we need to change it 
-			augmentations = self.augmentation(image=data_tmp["img"], bboxes=np.roll(data_tmp["labels"], axis=1, shift=4))
-			data_tmp["img"] = augmentations["image"]
+   
+			labels = torch.tensor(data_tmp["labels"])
+			bboxes = labels[..., 1:].tolist()
+			categories = [e for e in labels[..., 0].tolist()]
+   			# albumentations works with image numpy arrays
+			image = torch.permute(data_tmp["img"], (1, 2, 0)).numpy()
+			augmentations = self.augmentation(image=image, bboxes=bboxes, class_labels=categories)
+			aug_img = augmentations["image"]
+			data_tmp["img"] = torch.from_numpy( np.moveaxis(aug_img, -1, 0) )
             # loss fx requires bboxes to be (class_idx,x,y,w,h)
-			data_tmp["labels"] = np.array(augmentations["bboxes"])
-			if len(data_tmp["labels"]):
-				# and restore the original order of  bboxes
-				data_tmp["labels"] = np.roll(data_tmp["labels"], axis=1, shift=1)
-			data_tmp["labels"].tolist()
+			aug_labels = []
+			if len(augmentations["bboxes"]):
+				# and restore the original order of bboxes
+				aug_labels = torch.cat((torch.tensor([[e] for e in augmentations["class_labels"]]), torch.tensor(augmentations["bboxes"])), dim=-1)
+			data_tmp["labels"] = aug_labels.tolist()
 			return data_tmp
 		else:
 			return self.data[idx]
 
 class URBE_DataModule(pl.LightningDataModule):
-	# static objs
-	c2id = {'vehicle': 0, 'person': 1, 'motorbike': 2}
-	id2c = {0: 'vehicle', 1: 'person', 2: 'motorbike'}
  
 	def __init__(self, hparams: dict):
 		super().__init__()
