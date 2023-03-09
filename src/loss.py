@@ -208,7 +208,7 @@ class YOLO_Loss:
             + self.compute_loss(preds[1], t2, anchors=self.anchors_d[1], balance=self.balance[1])
             + self.compute_loss(preds[2], t3, anchors=self.anchors_d[2], balance=self.balance[2])
         )
-        return {"loss" : loss}
+        return loss
 
     # the actual function which computes the TRAINING loss
     def compute_loss(self, preds, targets, anchors, balance):

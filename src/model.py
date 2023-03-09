@@ -315,8 +315,6 @@ class DecoupledHead(nn.Module):
             output = torch.cat([reg_output, obj_output, cls_output], 1)
             
             bs, _, grid_y, grid_x = output.shape
-            # reshaping output to be (bs, n_scale_predictions, n_grid_y, n_grid_x, 5 + num_classes)
-            # why .permute? Here https://github.com/ultralytics/yolov5/issues/10524#issuecomment-1356822063
             output = output.view(bs, self.naxs, (5+self.nc), grid_y, grid_x).permute(0, 1, 3, 4, 2).contiguous()
             outputs.append(output)
         return outputs
@@ -347,9 +345,9 @@ class URBE_Perception(pl.LightningModule):
         elif self.hparams.head == "decoupled":
             self.head = DecoupledHead(ch=(self.hparams.first_out * 4, self.hparams.first_out * 8, self.hparams.first_out * 16))
         
-        # if the backbone is pretrained I don't train it at all to save memory space!
+        # if are loaded backbone/neck pretrained weights I don't train some layers to save memory space!
         if self.hparams.load_pretrained:
-            for param in self.backbone.backbone[:7].parameters(): # until the 6th layer
+            for param in self.backbone.backbone[:8].parameters(): # until the 7th layer
                 param.requires_grad = False
                 
         self.loss = YOLO_Loss(self.hparams)
@@ -377,8 +375,8 @@ class URBE_Perception(pl.LightningModule):
         out = self(imgs)
         loss = self.loss(out, batch["labels"])
         # LOSS
-        self.log_dict(loss)
-        return {"loss": loss["loss"]}
+        self.log_dict({"loss": loss})
+        return {"loss": loss}
 
     # =======================================================================================#
     def make_grids(self, anchors, naxs, nx=20, ny=20, i=0):
@@ -428,7 +426,7 @@ class URBE_Perception(pl.LightningModule):
             all_bboxes.append(scale_bboxes)
         return torch.cat(all_bboxes, dim=1)
 
-    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=300, is_pred=False): # it can be run an analysis about which is the best choice for max_detection for image
+    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False): # it can be run an analysis about which is the best choice for max_detection for image
         # for statistics purposes
         conf_thresh_ratio = 0
         nms_ratio = 0
@@ -541,7 +539,7 @@ class URBE_Perception(pl.LightningModule):
         val_loss = self.loss(out, batch["labels"])
         
         # LOSS
-        self.log("val_loss", val_loss["loss"], on_step=False, on_epoch=True, batch_size=imgs.shape[0])
+        self.log("val_loss", val_loss, on_step=False, on_epoch=True, batch_size=imgs.shape[0])
         
         conf_thresh_ratio, nms_ratio, pred = self.predict(out, batch['labels'])
         # STATISTICS
