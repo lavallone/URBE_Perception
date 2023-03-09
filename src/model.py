@@ -347,7 +347,7 @@ class URBE_Perception(pl.LightningModule):
         
         # if are loaded backbone/neck pretrained weights I don't train some layers to save memory space!
         if self.hparams.load_pretrained:
-            for param in self.backbone.backbone[:8].parameters(): # until the 7th layer
+            for param in self.backbone.backbone[:7].parameters(): # until the 6th layer
                 param.requires_grad = False
                 
         self.loss = YOLO_Loss(self.hparams)
@@ -379,7 +379,7 @@ class URBE_Perception(pl.LightningModule):
         return {"loss": loss}
 
     # =======================================================================================#
-    def make_grids(self, anchors, naxs, nx=20, ny=20, i=0):
+    def make_grids(self, anchors, naxs, stride, nx=20, ny=20, i=0):
 
         x_grid = torch.arange(nx)
         x_grid = x_grid.repeat(ny).reshape(ny, nx)
@@ -389,7 +389,7 @@ class URBE_Perception(pl.LightningModule):
 
         xy_grid = torch.stack([x_grid, y_grid], dim=-1)
         xy_grid = xy_grid.expand(1, naxs, ny, nx, 2)
-        anchor_grid = (anchors[i]).reshape((1, naxs, 1, 1, 2)).expand(1, naxs, ny, nx, 2)
+        anchor_grid = (anchors[i]*stride).reshape((1, naxs, 1, 1, 2)).expand(1, naxs, ny, nx, 2)
 
         return xy_grid.to(self.device), anchor_grid.to(self.device)
 
@@ -404,7 +404,7 @@ class URBE_Perception(pl.LightningModule):
             stride = strides[i] # 8/16/32
             # grid rappresenta la griglia (80x80, 40x40, ...) con gli indici
             # invece anchor_grid ha lo stesso numero di celle, ma con i valori degli anchors
-            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, ny=ny, nx=nx, i=i) # entrambi torch.Size([1, 3, 80, 80, 2]) - 1 è per avere una dimensione inpiù epr lavoarre con i batches
+            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, stride, ny=ny, nx=nx, i=i) # entrambi torch.Size([1, 3, 80, 80, 2]) - 1 è per avere una dimensione inpiù epr lavoarre con i batches
             if is_pred: # if they are the predicitons made by the model
                 # formula here: https://github.com/ultralytics/yolov5/issues/471
                 layer_prediction = predictions[i].sigmoid()
@@ -519,8 +519,8 @@ class URBE_Perception(pl.LightningModule):
         pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True) # (bs, 25200, 6) --> we use all the three layers
         true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False) # (bs, 20*20*3, 6)
         # after 'cell_to_boxes' the bboxes are set for 640x640 image size (indeed not normalized)
-        conf_thresh_ratio, nms_ratio, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=300, is_pred=True)
-        true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=300, is_pred=False)
+        conf_thresh_ratio, nms_ratio, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=True)
+        true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=False)
 
         pred_dict_list = []
         for b in range(len(pred_boxes)):
