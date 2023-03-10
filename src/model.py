@@ -549,6 +549,8 @@ class URBE_Perception(pl.LightningModule):
         self.log("val_accuracy_class", (pred["accuracy"][1] / (pred["accuracy"][0] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.log("val_accuracy_obj", (pred["accuracy"][3] / (pred["accuracy"][2] + 1e-16)), on_step=True, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         
+        # good  practice for logging metrics in lightning
+        # see https://torchmetrics.readthedocs.io/en/stable/pages/lightning.html
         self.mAP.update(pred["mAP"][0], pred["mAP"][1])
                 
      	# IMAGES
@@ -563,11 +565,10 @@ class URBE_Perception(pl.LightningModule):
     
     # we keep it only for image logging purposes
     def validation_epoch_end(self, outputs):
-        if self.hparams.log_map_each_epoch!=0 and self.global_step%self.hparams.log_map_each_epoch==0:
-            map_50 = self.mAP.compute()["map_50"]
-            self.log_dict({"map_50": map_50})
+        self.log('map_50', self.mAP.compute()["map_50"])
+        self.mAP.reset()
         
-        if self.hparams.log_image_each_epoch!=0 and self.global_step%self.hparams.log_image_each_epoch==0:
+        if self.hparams.log_image_each_epoch!=0 and self.current_epoch%self.hparams.log_image_each_epoch==0:
             # we randomly select one batch index
             bidx = random.randrange(100) % len(outputs)
             images = outputs[bidx]["images"]

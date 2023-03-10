@@ -5,7 +5,7 @@ class Hparams:
     # dataloader params
     dataset_dir: str = "dataset/URBE_dataset_10000/images"
     annotations_file_path: str = "dataset/URBE_dataset_10000/labels/COCO/annotations.json"
-    max_number_images: int = 1000
+    max_number_images: int = 2000
     num_classes: int = 3 # number of classes in the dataset
     augmentation: bool = False # apply augmentation strategy to input images and bounding boxes
     # by reducing the image size to a multiple of 32, you can get a higher frame rate. Here comes the trade-off between Speed and Accuracy. You can reduce the image size until you receive satisfactory accuracy for your use-case.
@@ -39,8 +39,7 @@ class Hparams:
     
     # LOGGING params
     log_images: int = 4 # how many images to log each time
-    log_image_each_epoch: int = 5 # epochs interval we wait to log images
-    log_map_each_epoch: int = 10 # epochs interval we wait to log mAP_50
+    log_image_each_epoch: int = 2 # epochs interval we wait to log images
     
     # INFERENCE params
     reduce_inference: bool = False # if we want to prune/quantize the model during training
