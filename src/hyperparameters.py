@@ -31,6 +31,7 @@ class Hparams:
     min_lr: float = 1e-8 # min lr for ReduceLROnPlateau
     adam_eps: float = 1e-6 # term added to the denominator to improve numerical stability
     wd: float = 5e-4 # weight decay as regulation strategy: 5e-4 or 1e-6
+    precision: int = 32 # which floating precision to use during training
     
     # PREDICT params - which objects do we want to detect? (trade-off metrics/speed)
     # values taken from https://github.com/AlessandroMondin/YOLOV5m
@@ -43,4 +44,3 @@ class Hparams:
     
     # INFERENCE params
     reduce_inference: bool = False # if we want to prune/quantize the model during training
-    precision: int = 32 # which floating precision to use during training

@@ -17,10 +17,8 @@ def train_model(data, model, experiment_name, patience, metric_to_monitor, mode,
         "-{epoch:02d}-{map_50:.4f}", verbose=True)
     # strategies in order to reduce the inference time of the trained models (pruning, quantization, etc.)
     if model.hparams.reduce_inference == True:
-        amount = 0.1 if model.hparams.first_out == 48 else 0.05 # if the model is 'medium' or 'nano' we change this value
-        pruning = ModelPruning("l1_unstructured", amount=amount, use_lottery_ticket_hypothesis=True) # the pruning is computed each epoch!
         quantization = QuantizationAwareTraining()
-        callbacks = [early_stop_callback, checkpoint_callback, pruning, quantization]
+        callbacks = [early_stop_callback, checkpoint_callback, quantization]
     else:
         callbacks = [early_stop_callback, checkpoint_callback]
     

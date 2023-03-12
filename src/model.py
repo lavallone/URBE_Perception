@@ -10,7 +10,6 @@ import random
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from torchvision.ops import batched_nms
 import torchvision.transforms as T
-import time
 
 ########################################## BASIC BUILDING BLOCKS ##############################################
 ##                                                                                                           ##
@@ -248,7 +247,7 @@ class SimpleHead(nn.Module):
             # reshaping output to be (bs, n_scale_predictions, n_grid_y, n_grid_x, 5 + num_classes)
             # why .permute? Here https://github.com/ultralytics/yolov5/issues/10524#issuecomment-1356822063
             x[i] = x[i].view(bs, self.naxs, (5+self.nc), grid_y, grid_x).permute(0, 1, 3, 4, 2).contiguous()
-
+        
         return x
 
 # a BASIC convolutional block which computes also Normalization and Activation afterwards
@@ -426,13 +425,13 @@ class URBE_Perception(pl.LightningModule):
             all_bboxes.append(scale_bboxes)
         return torch.cat(all_bboxes, dim=1)
 
-    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False): # it can be run an analysis about which is the best choice for max_detection for image
+    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False, filenames = None): # it can be run an analysis about which is the best choice for max_detection for image
         # for statistics purposes
         conf_thresh_ratio = 0
         nms_ratio = 0
         
         bboxes_after_nms = []
-        for boxes in batch_bboxes: # we iterate over the batches
+        for i, boxes in enumerate(batch_bboxes): # we iterate over the batches
             # 'boxes' is the set of cells for one batch --> (25200, 6)
             # FIRST FILTER on the probability of objectness
             boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we continue...
@@ -448,7 +447,7 @@ class URBE_Perception(pl.LightningModule):
                 indices = batched_nms(boxes[..., 2:], boxes[..., 1], boxes[..., 0].int(), iou_threshold)
                 
                 if indices.numel() == 0:
-                    print("***NO PREDICTIONS***")
+                    print(f"***NO PREDICTIONS for image {filenames[i]}***") # in this way we know which image is not predicted
                     boxes = torch.tensor([])
                 else:
                     before_nms = len(boxes)
@@ -487,7 +486,7 @@ class URBE_Perception(pl.LightningModule):
         return example_images
     # =======================================================================================#
     
-    def predict(self, predictions, targets):
+    def predict(self, predictions, targets, file_names):
         targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE) for bboxes in targets]
         # I want targets to be the same shape as predictions --> (bs, 3 , 80/40/20, 80/40/20, 6)
         t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
@@ -519,7 +518,7 @@ class URBE_Perception(pl.LightningModule):
         pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True) # (bs, 25200, 6) --> we use all the three layers
         true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False) # (bs, 20*20*3, 6)
         # after 'cell_to_boxes' the bboxes are set for 640x640 image size (indeed not normalized)
-        conf_thresh_ratio, nms_ratio, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=True)
+        conf_thresh_ratio, nms_ratio, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=True, filenames = file_names)
         true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=False)
 
         pred_dict_list = []
@@ -541,7 +540,7 @@ class URBE_Perception(pl.LightningModule):
         # LOSS
         self.log("val_loss", val_loss, on_step=False, on_epoch=True, batch_size=imgs.shape[0])
         
-        conf_thresh_ratio, nms_ratio, pred = self.predict(out, batch['labels'])
+        conf_thresh_ratio, nms_ratio, pred = self.predict(out, batch['labels'], batch['file_name'])
         # STATISTICS
         self.log("conf_thresh_ratio", conf_thresh_ratio, on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
         self.log("nms_ratio", nms_ratio, on_step=False, on_epoch=True, prog_bar=True, batch_size=self.hparams.batch_size)
