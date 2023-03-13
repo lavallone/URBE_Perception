@@ -349,7 +349,7 @@ class URBE_Perception(pl.LightningModule):
             for param in self.backbone.backbone[:7].parameters(): # until the 6th layer
                 param.requires_grad = False
                 
-        self.loss = YOLO_Loss(self.hparams)
+        self.loss = YOLO_Loss(self.hparams, self.head.anchors, self.head.stride, self.head.nl)
         self.mAP = MeanAveragePrecision()
 
     def forward(self, x): # we expect x to be the stack of images
@@ -403,7 +403,7 @@ class URBE_Perception(pl.LightningModule):
             stride = strides[i] # 8/16/32
             # grid rappresenta la griglia (80x80, 40x40, ...) con gli indici
             # invece anchor_grid ha lo stesso numero di celle, ma con i valori degli anchors
-            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, stride, ny=ny, nx=nx, i=i) # entrambi torch.Size([1, 3, 80, 80, 2]) - 1 è per avere una dimensione inpiù epr lavoarre con i batches
+            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, stride=stride, ny=ny, nx=nx, i=i) # entrambi torch.Size([1, 3, 80, 80, 2]) - 1 è per avere una dimensione inpiù epr lavoarre con i batches
             if is_pred: # if they are the predicitons made by the model
                 # formula here: https://github.com/ultralytics/yolov5/issues/471
                 layer_prediction = predictions[i].sigmoid()
@@ -425,7 +425,7 @@ class URBE_Perception(pl.LightningModule):
             all_bboxes.append(scale_bboxes)
         return torch.cat(all_bboxes, dim=1)
 
-    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False, filenames = None): # it can be run an analysis about which is the best choice for max_detection for image
+    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False, filenames=None): # it can be run an analysis about which is the best choice for max_detection for image
         # for statistics purposes
         conf_thresh_ratio = 0
         nms_ratio = 0
@@ -437,10 +437,12 @@ class URBE_Perception(pl.LightningModule):
             boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we continue...
             conf_thresh_ratio += len(boxes) / 25200
             # from (xc, yc, w, h) to (x1, y1, x2, y2) --> it is perfect for wandb bbox visualization!
-            boxes[..., 2:3] = boxes[..., 2:3] - (boxes[..., 4:5]/2) # x1
-            boxes[..., 3:4] = boxes[..., 3:4] - (boxes[..., 5:6]/2) # y1
-            boxes[..., 4:5] = boxes[..., 2:3] + (boxes[..., 4:5]/2) # x2
-            boxes[..., 5:6] = boxes[..., 3:4] + (boxes[..., 5:6]/2) # y2
+            w = boxes[..., 4:5]
+            h = boxes[..., 5:6]
+            boxes[..., 2:3] = boxes[..., 2:3] - (w/2) # x1
+            boxes[..., 3:4] = boxes[..., 3:4] - (h/2) # y1
+            boxes[..., 4:5] = boxes[..., 2:3] + w # x2
+            boxes[..., 5:6] = boxes[..., 3:4] + h # y2
             
             # we perform non maxima suppression(nms)
             if is_pred:
@@ -515,10 +517,10 @@ class URBE_Perception(pl.LightningModule):
             correct_obj += torch.sum(obj_preds[obj] == targets[i][..., 4][obj])
         
         ## mAP_50 ##
-        pred_boxes = self.cells_to_bboxes(predictions, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device,  is_pred=True) # (bs, 25200, 6) --> we use all the three layers
-        true_boxes = self.cells_to_bboxes(targets, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE, self.device, is_pred=False) # (bs, 20*20*3, 6)
+        pred_boxes = self.cells_to_bboxes(predictions, self.head.anchors, self.head.stride, self.device, is_pred=True)
+        true_boxes = self.cells_to_bboxes(targets, self.head.anchors, self.head.stride, self.device, is_pred=False) # (bs, 20*20*3, 6)
         # after 'cell_to_boxes' the bboxes are set for 640x640 image size (indeed not normalized)
-        conf_thresh_ratio, nms_ratio, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=True, filenames = file_names)
+        conf_thresh_ratio, nms_ratio, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=True, filenames=file_names)
         true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=False)
 
         pred_dict_list = []

@@ -12,7 +12,7 @@ def train_model(data, model, experiment_name, patience, metric_to_monitor, mode,
     early_stop_callback = EarlyStopping(
         monitor=metric_to_monitor, mode=mode, min_delta=0.00, patience=patience, verbose=True)
     checkpoint_callback = ModelCheckpoint(
-        save_top_k=1, monitor=metric_to_monitor, mode=mode, dirpath="models",
+        save_top_k=2, monitor=metric_to_monitor, mode=mode, dirpath="models",
         filename=experiment_name +
         "-{epoch:02d}-{map_50:.4f}", verbose=True)
     # strategies in order to reduce the inference time of the trained models (pruning, quantization, etc.)

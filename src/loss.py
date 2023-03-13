@@ -6,7 +6,7 @@ import math
 ##################################################################################################################################
 # https://github.com/aladdinpersson/Machine-Learning-Collection
 # it is only needed during the targets transformation function
-def iou_width_height(gt_box, anchors, strided_anchors=False, stride=[8, 16, 32]):
+def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
     """
     Parameters:
         gt_box (tensor): width and height of the ground truth box
@@ -22,10 +22,10 @@ def iou_width_height(gt_box, anchors, strided_anchors=False, stride=[8, 16, 32])
     else:
         anchors = anchors.reshape(9, 2)
     anchors = anchors.to("cuda")
+    
     intersection = torch.min(gt_box[..., 0], anchors[..., 0]) * torch.min(
         gt_box[..., 1], anchors[..., 1]
     )
-    
     union = (
         gt_box[..., 0] * gt_box[..., 1] + anchors[..., 0] * anchors[..., 1] - intersection
     )
@@ -35,7 +35,7 @@ def iou_width_height(gt_box, anchors, strided_anchors=False, stride=[8, 16, 32])
 
 # added the possibility of computing also GIoU, DIoU and CIoU!
 # we only use this function for the loss during training
-def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
+def intersection_over_union(boxes_preds, boxes_labels, box_format="yolo", GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
     """
     This function calculates intersection over union (iou) given pred boxes
     and target boxes.
@@ -43,7 +43,7 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=F
     Parameters:
         boxes_preds (tensor): Predictions of Bounding Boxes (BATCH_SIZE, 4)
         boxes_labels (tensor): Correct labels of Bounding Boxes (BATCH_SIZE, 4)
-        box_format (str): coco/corners, if boxes (x1,y1,w,h) or (x1,y1,x2,y2)
+        box_format (str): yolo/coco/corners, if boxes (xc,yc,w,h), (x1,y1,w,h) or (x1,y1,x2,y2)
         GIoU (bool): if True it computed GIoU loss (https://arxiv.org/pdf/1902.09630.pdf)
         DIoU (bool): if True it computed DIoU loss (https://arxiv.org/abs/1911.08287v1)
         CIoU (bool): if True it computed CIoU loss (https://github.com/Zzh-tju/DIoU-SSD-pytorch/blob/master/utils/box/box_utils.py#L47)
@@ -52,8 +52,17 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=F
     Returns:
         tensor: Intersection over union for all examples
     """
-
-    if box_format == "coco":
+    if box_format == "yolo":
+        box1_x1 = boxes_preds[..., 0:1] - (boxes_preds[..., 2:3]/2)
+        box1_y1 = boxes_preds[..., 1:2] - (boxes_preds[..., 3:4]/2)
+        box1_x2 = boxes_preds[..., 0:1] + (boxes_preds[..., 2:3]/2)
+        box1_y2 = boxes_preds[..., 1:2] + (boxes_preds[..., 3:4]/2)
+        box2_x1 = boxes_labels[..., 0:1] - (boxes_labels[..., 2:3]/2)
+        box2_y1 = boxes_labels[..., 1:2] - (boxes_labels[..., 3:4]/2)
+        box2_x2 = boxes_labels[..., 0:1] + (boxes_labels[..., 2:3]/2)
+        box2_y2 = boxes_labels[..., 1:2] + (boxes_labels[..., 3:4]/2)
+        
+    elif box_format == "coco":
         box1_x1 = boxes_preds[..., 0:1]
         box1_y1 = boxes_preds[..., 1:2] 
         box1_x2 = boxes_preds[..., 0:1] + boxes_preds[..., 2:3] 
@@ -111,17 +120,6 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="coco", GIoU=F
 
 class YOLO_Loss:
     
-    # After the computation of the 'autoanchor' algorithm, we acknowledge that these are the "best" anchors (the default ones used in YOLOv5)
-    # https://github.com/ultralytics/yolov5/blob/master/models/yolov5m.yaml
-    ANCHORS = torch.tensor([ [(10, 13), (16, 30), (33, 23)],  # P3/8
-                             [(30, 61), (62, 45), (59, 119)],  # P4/16
-                             [(116, 90), (156, 198), (373, 326)] ])  # P5/32
-    
-    # https://pytorch.org/docs/stable/generated/torch.nn.Module.html command+f register_buffer
-    # has the same result as self.anchors = anchors but, it's a way to register a buffer (make
-    # a variable available in runtime) that should not be considered a model parameter
-    STRIDE = [8, 16, 32]
-    
     # https://github.com/ultralytics/yolov5/issues/2026
     BALANCE = [4.0, 1.0, 0.4]
     
@@ -168,7 +166,7 @@ class YOLO_Loss:
                     has_anchor[scale_idx] = True # for this scale and for this particular bbox we have the anchor
         return targets
     
-    def __init__(self, hparams):
+    def __init__(self, hparams, anchors, stride, nl):
 
         self.BCE_cls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0)) # pos_weigt indicates how much the positive samples are weighted during the loss computation
         self.BCE_obj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
@@ -177,13 +175,13 @@ class YOLO_Loss:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         
         self.nc = hparams["num_classes"] # number of classes
-        self.nl = len(YOLO_Loss.ANCHORS) # number of scale/layers
-        self.anchors_d = YOLO_Loss.ANCHORS.clone().detach() # (3, 3, 2) --> they are exactly the anchor boxes, but modified
-        self.anchors = YOLO_Loss.ANCHORS.clone().detach().to("cpu")
+        self.nl = nl # number of scale/layers
+        self.anchors_d = anchors.clone().detach() # (3, 3, 2) --> they are exactly the strided anchor boxes
+        self.anchors = anchors.clone().detach().to("cpu")
 
         self.na = self.anchors.reshape(9,2).shape[0] # number of anchors --> 9
         self.num_anchors_per_scale = self.na // 3 # number of anchors for each scale --> 3
-        self.S = YOLO_Loss.STRIDE
+        self.S = stride
         
         # https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml
         # https://github.com/ultralytics/yolov5/blob/master/utils/loss.py#L170
@@ -225,7 +223,7 @@ class YOLO_Loss:
         tbox = targets[..., 0:4][obj]
         
         # iou computation
-        iou = intersection_over_union(pbox, tbox, box_format="coco", GIoU=True).squeeze() # official yolov5 repo uses CIoU
+        iou = intersection_over_union(pbox, tbox, box_format="yolo", GIoU=True).squeeze() # official yolov5 repo uses CIoU
 
         # ======================== #
         #   FOR BOX COORDINATES    #
