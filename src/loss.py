@@ -4,8 +4,9 @@ import math
 
 ####################################################### UTILS ####################################################################
 ##################################################################################################################################
-# https://github.com/aladdinpersson/Machine-Learning-Collection
-# it is only needed during the targets transformation function
+# these two functions are partially taken form https://github.com/aladdinpersson/Machine-Learning-Collection
+
+# it is only needed during the 'targets transformation function'
 def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
     """
     Parameters:
@@ -15,10 +16,10 @@ def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
     Returns:
         tensor: Intersection over union between the gt_box and each of the n-anchors
     """
-    anchors = anchors.float()
+    anchors = anchors.float().to("cuda")
     anchors /= 640
     if strided_anchors:
-        anchors = anchors.reshape(9, 2) * torch.tensor(stride).repeat(6, 1).T.reshape(9, 2)
+        anchors = anchors.reshape(9, 2) * torch.tensor(stride).repeat(6, 1).T.reshape(9, 2).to("cuda")
     else:
         anchors = anchors.reshape(9, 2)
     anchors = anchors.to("cuda")
@@ -29,11 +30,9 @@ def iou_width_height(gt_box, anchors, strided_anchors=True, stride=[8, 16, 32]):
     union = (
         gt_box[..., 0] * gt_box[..., 1] + anchors[..., 0] * anchors[..., 1] - intersection
     )
-    
-    # intersection/union shape (9,)
     return intersection / union
 
-# added the possibility of computing also GIoU, DIoU and CIoU!
+# added the possibility of computing also GIoU, DIoU and CIoU --> using only GIoU is the best choice!
 # we only use this function for the loss during training
 def intersection_over_union(boxes_preds, boxes_labels, box_format="yolo", GIoU=False, DIoU=False, CIoU=False, eps=1e-7):
     """
@@ -85,7 +84,7 @@ def intersection_over_union(boxes_preds, boxes_labels, box_format="yolo", GIoU=F
     w1, h1, w2, h2 = box1_x2 - box1_x1, box1_y2 - box1_y1, box2_x2 - box2_x1, box2_y2 - box2_y1
     
     # Intersection area
-    # clamp(0) is for the case when they do not intersect
+    # clamp(0) is for the cases when they do not intersect
     inter = (torch.min(box1_x2, box2_x2) - torch.max(box1_x1, box2_x1)).clamp(0) * \
             (torch.min(box1_y2, box2_y2) - torch.max(box1_y1, box2_y1)).clamp(0)
 
@@ -128,11 +127,11 @@ class YOLO_Loss:
     def transform_targets(input_tensor, bboxes, anchors, strides, num_anchors_per_scale=3):
         targets = [torch.zeros((num_anchors_per_scale, input_tensor[i].shape[2], input_tensor[i].shape[3], 6))
                    for i in range(len(strides))]
-    
+        
         # bboxes is relative to a single batch --> (max_labels_batch, 5)
         classes = bboxes[:, 0].tolist()
         bboxes = bboxes[:, 1:]
-        # filtering only the real annotations --> remember what we have done with the collate function!
+        # filtering only the real annotations --> remember what we have done with the 'collate_fn' function in data_module.py!
         for i, e in enumerate(bboxes):
             if e.sum() == 0:
                 classes = classes[:i]
@@ -168,7 +167,7 @@ class YOLO_Loss:
     
     def __init__(self, hparams, anchors, stride, nl):
 
-        self.BCE_cls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0)) # pos_weigt indicates how much the positive samples are weighted during the loss computation
+        self.BCE_cls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0)) # (pos_weigt indicates how much the positive samples are weighted during the loss computation)
         self.BCE_obj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(1.0))
         self.sigmoid = nn.Sigmoid()
         
@@ -183,8 +182,8 @@ class YOLO_Loss:
         self.num_anchors_per_scale = self.na // 3 # number of anchors for each scale --> 3
         self.S = stride
         
-        # https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml
-        # https://github.com/ultralytics/yolov5/blob/master/utils/loss.py#L170
+        # see https://github.com/ultralytics/yolov5/blob/master/data/hyps/hyp.scratch-low.yaml
+        # and https://github.com/ultralytics/yolov5/blob/master/utils/loss.py#L170
         self.lambda_class = hparams["weight_class"] * (self.nc / 80 * 3 / self.nl) # scale to layers
         self.lambda_obj = hparams["weight_obj"] * ((hparams["img_size"] / 640) ** 2 * 3 / self.nl) # scale to classes and layers
         self.lambda_box = hparams["weight_box"] * (3 / self.nl) # scale to image size and layers
@@ -208,7 +207,7 @@ class YOLO_Loss:
         )
         return loss
 
-    # the actual function which computes the TRAINING loss
+    # the actual function which computes the loss
     def compute_loss(self, preds, targets, anchors, balance):
         bs = preds.shape[0]
         # originally anchors have shape (3,2) --> 3 set of anchors of width and height
@@ -223,12 +222,11 @@ class YOLO_Loss:
         tbox = targets[..., 0:4][obj]
         
         # iou computation
-        iou = intersection_over_union(pbox, tbox, box_format="yolo", GIoU=True).squeeze() # official yolov5 repo uses CIoU
+        iou = intersection_over_union(pbox, tbox, box_format="yolo", GIoU=True).squeeze()
 
         # ======================== #
         #   FOR BOX COORDINATES    #
         # ======================== #
-        # (Aladdin does something weird with the targets for the iou computations for the gradient flow)
         lbox = (1.0 - iou).mean()  # iou loss
 
         # ======================= #
@@ -242,7 +240,7 @@ class YOLO_Loss:
         #   FOR CLASS LOSS   #
         # ================== #
         tcls = torch.zeros_like(preds[..., 5:][obj], device=self.device) # in order to make it comparable with the predictions, we augment the class field from 1 to 3 --> [0, 0, 0]
-        tcls[torch.arange(tcls.size(0)), targets[..., 5][obj].long()] = 1.0  # and we set to one the class to which the object belongs (for torch > 1.11.0)
+        tcls[torch.arange(tcls.size(0)), targets[..., 5][obj].long()] = 1.0  # and we set to one the class to which the object belongs
         lcls = self.BCE_cls(preds[..., 5:][obj], tcls)
 
         return (self.lambda_box * lbox + self.lambda_obj * lobj + self.lambda_class * lcls) * bs # like in YOLOv5 official code

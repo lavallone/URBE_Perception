@@ -5,7 +5,7 @@ from torchvision.transforms import Resize
 from torchvision.transforms import InterpolationMode
 import wandb
 import pytorch_lightning as pl
-from .loss import YOLO_Loss, intersection_over_union
+from .loss import YOLO_Loss
 import random
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from torchvision.ops import batched_nms
@@ -268,6 +268,7 @@ class BaseConv(nn.Module):
 			return self.act(self.conv(x))
 		return self.act(self.norm(self.conv(x)))
 
+# this is the implementation of the Decoupled Head (an alternative to the above "SimpleHead")
 class DecoupledHead(nn.Module):
     def __init__(self, nc=3, ch=()):  # detection layer
         super(DecoupledHead, self).__init__()
@@ -346,7 +347,7 @@ class URBE_Perception(pl.LightningModule):
         
         # if are loaded backbone/neck pretrained weights I don't train some layers to save memory space!
         if self.hparams.load_pretrained:
-            for param in self.backbone.backbone[:7].parameters(): # until the 6th layer
+            for param in self.backbone.backbone[:7].parameters(): # until the 6th backbone layer
                 param.requires_grad = False
                 
         self.loss = YOLO_Loss(self.hparams, self.head.anchors, self.head.stride, self.head.nl)
@@ -378,7 +379,7 @@ class URBE_Perception(pl.LightningModule):
         return {"loss": loss}
 
     # =======================================================================================#
-    def make_grids(self, anchors, naxs, stride, nx=20, ny=20, i=0):
+    def make_grids(self, anchors, naxs, stride, nx, ny, i):
 
         x_grid = torch.arange(nx)
         x_grid = x_grid.repeat(ny).reshape(ny, nx)
@@ -394,23 +395,23 @@ class URBE_Perception(pl.LightningModule):
 
     def cells_to_bboxes(self, predictions, anchors, strides, device, is_pred=False):
         num_out_layers = len(predictions) # num of scales 
-        grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialize
-        anchor_grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialize
-            
+        grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialization
+        anchor_grid = [torch.empty(0) for _ in range(num_out_layers)]  # initialization
+        
         all_bboxes = []
         for i in range(num_out_layers):
             bs, naxs, ny, nx, _ = predictions[i].shape # (bs, 3, 80/40/20, 80/40/20, _)
             stride = strides[i] # 8/16/32
-            # grid rappresenta la griglia (80x80, 40x40, ...) con gli indici
-            # invece anchor_grid ha lo stesso numero di celle, ma con i valori degli anchors
-            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, stride=stride, ny=ny, nx=nx, i=i) # entrambi torch.Size([1, 3, 80, 80, 2]) - 1 è per avere una dimensione inpiù epr lavoarre con i batches
+            # 'grid' represents the grid (80x80, 40x40, ...) with indices
+            # 'anchor_grid' has the same number of cells, but with anchors values
+            grid[i], anchor_grid[i] = self.make_grids(anchors, naxs, stride=stride, ny=ny, nx=nx, i=i) # both torch.Size([1, 3, 80/40/20, 80/40/20, 2])
             if is_pred: # if they are the predicitons made by the model
-                # formula here: https://github.com/ultralytics/yolov5/issues/471
+                # formula taken from here: https://github.com/ultralytics/yolov5/issues/471
                 layer_prediction = predictions[i].sigmoid()
                 obj = layer_prediction[..., 4:5]
                 xy = (2 * (layer_prediction[..., 0:2]) + grid[i] - 0.5) * stride
                 wh = ((2*layer_prediction[..., 2:4])**2) * anchor_grid[i]
-                best_class = torch.argmax(layer_prediction[..., 5:], dim=-1).unsqueeze(-1) # quindi da 8 diventa 6!
+                best_class = torch.argmax(layer_prediction[..., 5:], dim=-1).unsqueeze(-1)
 
             else: # when we want to re-convert the ground_truth labels to images bboxes
                 if i != num_out_layers-1:
@@ -425,7 +426,7 @@ class URBE_Perception(pl.LightningModule):
             all_bboxes.append(scale_bboxes)
         return torch.cat(all_bboxes, dim=1)
 
-    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False, filenames=None): # it can be run an analysis about which is the best choice for max_detection for image
+    def non_max_suppression(self, batch_bboxes, iou_threshold, threshold, max_detections=50, is_pred=False, filenames=None):
         # for statistics purposes
         conf_thresh_ratio = 0
         nms_ratio = 0
@@ -436,7 +437,7 @@ class URBE_Perception(pl.LightningModule):
             # FIRST FILTER on the probability of objectness
             boxes = torch.masked_select(boxes, boxes[..., 1:2] > threshold).reshape(-1, 6) # if objectness is greater than the threshold, we continue...
             conf_thresh_ratio += len(boxes) / 25200
-            # from (xc, yc, w, h) to (x1, y1, x2, y2) --> it is perfect for wandb bbox visualization!
+            # from (xc, yc, w, h) to (x1, y1, x2, y2) --> it is perfect for wandb bbox logging visualization!
             w = boxes[..., 4:5]
             h = boxes[..., 5:6]
             boxes[..., 2:3] = boxes[..., 2:3] - (w/2) # x1
@@ -449,7 +450,7 @@ class URBE_Perception(pl.LightningModule):
                 indices = batched_nms(boxes[..., 2:], boxes[..., 1], boxes[..., 0].int(), iou_threshold)
                 
                 if indices.numel() == 0:
-                    print(f"***NO PREDICTIONS for image {filenames[i]}***") # in this way we know which image is not predicted
+                    print(f"***NO PREDICTIONS for image {filenames[i]}***") # in this way we know which image is not predicted and we can check it!
                     boxes = torch.tensor([])
                 else:
                     before_nms = len(boxes)
@@ -464,7 +465,7 @@ class URBE_Perception(pl.LightningModule):
         
         # if we're dealing with predictions we also want to save some statistics    
         if is_pred:
-            return conf_thresh_ratio/len(batch_bboxes), nms_ratio/len(batch_bboxes), bboxes_after_nms # return a list of tensors --> len(bboxes_after_nms) == batch_size
+            return conf_thresh_ratio/len(batch_bboxes), nms_ratio/len(batch_bboxes), bboxes_after_nms # it's a list of tensors --> len(bboxes_after_nms) == batch_size
         else:
             return bboxes_after_nms
     
@@ -489,7 +490,7 @@ class URBE_Perception(pl.LightningModule):
     # =======================================================================================#
     
     def predict(self, predictions, targets, file_names):
-        targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE) for bboxes in targets]
+        targets = [YOLO_Loss.transform_targets(predictions, bboxes, torch.tensor(URBE_Perception.ANCHORS), URBE_Perception.STRIDE) for bboxes in targets] # giving the not strided ANCHORS everything works!
         # I want targets to be the same shape as predictions --> (bs, 3 , 80/40/20, 80/40/20, 6)
         t1 = torch.stack([target[0] for target in targets], dim=0).to(self.device,non_blocking=True)
         t2 = torch.stack([target[1] for target in targets], dim=0).to(self.device,non_blocking=True)
@@ -497,6 +498,7 @@ class URBE_Perception(pl.LightningModule):
         targets = [t1, t2, t3] # all the batches are grouped according to the scale
         
         ## Custom "ACCURACY" for classes and objectness ##
+        ##################################################
         tot_class, correct_class = 0, 0 # total number of objects to be predicted and the  number of objects to be correctly predicted
         tot_obj, correct_obj = 0, 0
         for i in range(3): # for each layer/scale
@@ -515,10 +517,12 @@ class URBE_Perception(pl.LightningModule):
             obj_preds = torch.sigmoid(predictions[i][..., 4]) > self.hparams.conf_threshold
             # among the grid cells that contains an object, see if the cell is predicted as a cell which detects an object
             correct_obj += torch.sum(obj_preds[obj] == targets[i][..., 4][obj])
+        ##################################################
         
         ## mAP_50 ##
+        ############
         pred_boxes = self.cells_to_bboxes(predictions, self.head.anchors, self.head.stride, self.device, is_pred=True)
-        true_boxes = self.cells_to_bboxes(targets, self.head.anchors, self.head.stride, self.device, is_pred=False) # (bs, 20*20*3, 6)
+        true_boxes = self.cells_to_bboxes(targets, self.head.anchors, self.head.stride, self.device, is_pred=False) # (bs, 20*20*3, 6) --> for the targets we only need one layer!
         # after 'cell_to_boxes' the bboxes are set for 640x640 image size (indeed not normalized)
         conf_thresh_ratio, nms_ratio, pred_boxes = self.non_max_suppression(pred_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=True, filenames=file_names)
         true_boxes = self.non_max_suppression(true_boxes, iou_threshold=self.hparams.nms_iou_thresh, threshold=self.hparams.conf_threshold, max_detections=50, is_pred=False)
@@ -526,10 +530,11 @@ class URBE_Perception(pl.LightningModule):
         pred_dict_list = []
         for b in range(len(pred_boxes)):
             if pred_boxes[b].numel() == 0: # if the model hasn't predict any bboxes
-                pred_dict_list.append( dict(boxes=torch.tensor([]).to("cuda"), scores=torch.tensor([]).to("cuda"), labels=torch.tensor([]).to("cuda"),) )
+                pred_dict_list.append( dict(boxes=torch.tensor([]).to(self.device), scores=torch.tensor([]).to(self.device), labels=torch.tensor([]).to(self.device),) )
             else:
                 pred_dict_list.append( dict(boxes=pred_boxes[b][..., 2:], scores=pred_boxes[b][..., 1], labels=pred_boxes[b][..., 0],) )
         true_dict_list = [ dict(boxes=true_boxes[i][..., 2:], labels=true_boxes[i][..., 0],) for i in range(len(true_boxes)) ]
+        ############
         
         return conf_thresh_ratio, nms_ratio, {"mAP" : (pred_dict_list, true_dict_list) , "accuracy" : (tot_class, correct_class, tot_obj, correct_obj)}
 

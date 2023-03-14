@@ -3,8 +3,7 @@ import torch
 from pytorch_lightning.loggers.wandb import WandbLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.callbacks import ModelPruning
-from pytorch_lightning.callbacks import QuantizationAwareTraining
+from pytorch_lightning.callbacks import QuantizationAwareTraining # it doesn't work :(
 
 def train_model(data, model, experiment_name, patience, metric_to_monitor, mode, epochs):
     logger =  WandbLogger()
@@ -12,11 +11,11 @@ def train_model(data, model, experiment_name, patience, metric_to_monitor, mode,
     early_stop_callback = EarlyStopping(
         monitor=metric_to_monitor, mode=mode, min_delta=0.00, patience=patience, verbose=True)
     checkpoint_callback = ModelCheckpoint(
-        save_top_k=2, monitor=metric_to_monitor, mode=mode, dirpath="models",
+        save_top_k=1, monitor=metric_to_monitor, mode=mode, dirpath="models",
         filename=experiment_name +
         "-{epoch:02d}-{map_50:.4f}", verbose=True)
-    # strategies in order to reduce the inference time of the trained models (pruning, quantization, etc.)
-    if model.hparams.reduce_inference == True:
+    # quantization strategy in order to reduce the inference time of the trained models
+    if model.hparams.quantization == True:
         quantization = QuantizationAwareTraining()
         callbacks = [early_stop_callback, checkpoint_callback, quantization]
     else:
