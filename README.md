@@ -1,3 +1,5 @@
+![Streets of Rome](https://github.com/lavallone/URBE_Perception/raw/main/videos/Streets_of_Rome.gif)
+
 # Notebooks present in the repo
 
 * ***URBE_Perception.ipynb***: this is the main notebook where I implemented most of the code for the project (*mandatory to read it*).
