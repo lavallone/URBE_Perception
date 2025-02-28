@@ -1,6 +1,6 @@
 # URBE Perception 
 ## Real-time vehicle detection for self-driving cars 🚗 in Rome 🇮🇹
-![Streets of Rome](https://github.com/lavallone/URBE_Perception/raw/main/videos/Streets_of_Rome.gif)
+![Streets of Rome](https://github.com/lavallone/URBE_Perception/raw/main/assets/Streets_of_Rome.gif)
 
 ### Notebooks present in the repo
 
